@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 2.8.7)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 include(AppendCompilerFlags)
 
-project(name_project)
-set(PROJECT_VENDOR "name_author")
-set(CMAKE_PROJECT_NAME "name_project")
-set(PROJECT_CONTACT "project_contact")
+project(repair-sampling)
+set(PROJECT_VENDOR "Adrián Gómez Brandón")
+set(CMAKE_PROJECT_NAME "repair-sampling")
+set(PROJECT_CONTACT "adrian.gbrandon@udc.es")
 
 
 #Change to "Debug" when you need it
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
 
 # C++11 compiler Check
 if(NOT CMAKE_CXX_COMPILER_VERSION) # work around for cmake versions smaller than 2.8.10
@@ -46,6 +46,7 @@ else()
 endif()
 
 add_subdirectory(external/sdsl-lite)
+add_subdirectory(external/repair_gn)
 
 include_directories("${PROJECT_SOURCE_DIR}/external/googletest/include"
         ${CMAKE_HOME_DIRECTORY}/include
@@ -53,9 +54,10 @@ include_directories("${PROJECT_SOURCE_DIR}/external/googletest/include"
         ${CMAKE_BINARY_DIR}/external/sdsl-lite/external/libdivsufsort/include/
         ${CMAKE_HOME_DIRECTORY}/external/googletest/include
         ${CMAKE_HOME_DIRECTORY}/external/sdsl-lite/external/FastPFor/headers/
+        ${CMAKE_HOME_DIRECTORY}/external/repair_gn
         ${STXXL_INCLUDE_DIRS}
         )
 
 
 add_executable(template_executable src/main.cpp)
-target_link_libraries(template_executable sdsl divsufsort divsufsort64)
+target_link_libraries(template_executable libRepairGN sdsl divsufsort divsufsort64)

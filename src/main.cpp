@@ -26,24 +26,51 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **/
 
-#include <table_bitmap.hpp>
+#include <repair_sampling.hpp>
 
 using namespace cds;
 
 int main(){
 
-    std::vector<std::pair<uint32_t, uint32_t>> input = {{1,3}, {4,5}, {5,6}, {9,7}, {14,2}};
+   std::vector<uint32_t> vec;
+   for(uint32_t i = 0; i < 1000; ++i){
+       vec.push_back((uint32_t) (rand() % 10)); //0-19
+   }
+   for(auto &v : vec){
+       std::cout << v << ", ";
+   }
+   std::cout << std::endl;
+   repair_sampling<> m_structure(vec,100);
+   std::cout << "Built" << std::endl;
+   auto sol = m_structure.decompress();
+   std::cout << "Decompressed" << std::endl;
+   for(uint i = 0; i < vec.size(); ++i){
+       if(vec[i] != sol[i]){
+           std::cout << "Error en i=" <<i << std::endl;
+           exit(0);
+       }
+   }
+   std::cout << "Everything is OK!" << std::endl;
 
-    table_bitmap<uint32_t> tb(input);
+   auto r5 = m_structure.access(270,321);
+   for(const auto &v : r5){
+       std::cout << v << ", ";
+   }
+    std::cout << std::endl;
+   for(uint i = 270; i <= 321; ++i){
+       std::cout << vec[i] << ", ";
+   }
+   std::cout << std::endl;
+   for(const auto &v : vec){
+       std::cout << v << ", ";
+   }
+   std::cout << std::endl;
 
-    for(uint64_t i = 0; i < 15; ++i){
-        auto exists = tb.exist(i);
-        std::cout << "Key " << i << " exists: " << exists;
-        if(exists){
-           std::cout << " and contains: " << tb[i];
-        }
-        std::cout << std::endl;
-    }
+   auto p = m_structure.extremes(0, 999);
+   std::cout << "min: " << p.first << ", max: " << p.second << std::endl;
 
-    std::cout << "Size of the structure: " << sdsl::size_in_bytes(tb) << " bytes. "<< std::endl;
+   std::cout << "Array: " << (sizeof(uint32_t) * 1000) << " (bytes)" << std::endl;
+   std::cout << "Structure: " << sdsl::size_in_bytes(m_structure) << " (bytes)" << std::endl;
+   sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, "repair_sampling.html");
+
 }

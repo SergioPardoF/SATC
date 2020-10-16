@@ -209,6 +209,45 @@ namespace cds {
             }
         }
 
+        void construction(const std::vector<value_type> &log, const size_type period){
+            m_period = period;
+            m_last_t = log.size()-1;
+            int32_t max_value = 0;
+            std::vector<int32_t> aux_log, terminals;
+            std::map<int32_t, char> map_terminals;
+            for(size_type i = 0; i < log.size(); ++i){
+                if(i % m_period == 0){
+                    aux_log.push_back(-1);
+                }
+                aux_log.push_back(log[i]);
+                if(log[i] > max_value) max_value = log[i];
+            }
+            add_splits(aux_log, terminals, map_terminals);
+            size_type length_log = aux_log.size();
+            int* log_repair = new int[length_log];
+            std::cout << length_log << std::endl;
+            sort(terminals.begin(), terminals.end());
+            auto m_zero_value = translate_log(aux_log, terminals, log_repair);
+            aux_log.clear();
+            //3. We apply repair over the log
+            repair m_repair_algo;
+            int total_MB = ::util::memory::total_memory_megabytes() * 0.8;
+            std::cout << total_MB << std::endl;
+            m_repair_algo.run(log_repair, length_log, total_MB);
+            reverse_translation(m_repair_algo, m_zero_value, terminals);
+            std::cout << "Last in c: " << m_repair_algo.c[m_repair_algo.lenC-1] << std::endl;
+            m_alpha = m_repair_algo.alpha;
+            //6. We add extra information to the rules
+            add_extra_info_rules(m_repair_algo);
+            samples(m_repair_algo);
+            m_values = std::vector<value_type>(m_repair_algo.lenC);
+            for(auto i = 0; i < m_values.size(); ++i){
+                m_values[i] = m_repair_algo.c[i];
+            }
+
+            std::cout << m_alpha << std::endl;
+        }
+
         inline value_type left_rule(const value_type val){
             auto r_i = val - m_alpha;
             return m_rules[r_i*2];
@@ -276,61 +315,74 @@ namespace cds {
             result.push_back(val);
         }
 
-        void decompress_beg(value_type val, size_type t_b, size_type t_e, size_type tq, std::vector<value_type> &result){
+        void decompress_beg(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, std::vector<value_type> &result){
             if(val >= m_alpha) {
                 auto l = left_rule(val);
                 auto len_l = length(l);
-                if (t_b + len_l - 1 >= tq) {
-                    decompress_beg(l, t_b, t_b + len_l - 1, tq, result);
+                auto mid = t_b + len_l -1;
+                if (mid >= t_i) {
+                    decompress_beg(l, t_b, mid, t_i, t_j, result);
                 }
-                decompress_beg(right_rule(val), t_b+len_l, t_e, tq, result);
-            }else if(t_b >= tq){
+                if(mid+1 <= t_j){
+                    decompress_beg(right_rule(val), mid+1, t_e, t_i, t_j, result);
+                }
+
+            }else if( t_i <= t_b && t_b <= t_j){
                 result.push_back(val);
             }
         }
 
-        void decompress_end(value_type val, size_type t_b, size_type t_e, size_type tq, std::vector<value_type> &result){
+        void decompress_end(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, std::vector<value_type> &result){
             if(val >= m_alpha) {
                 auto l = left_rule(val);
                 auto len_l = length(l);
-                decompress_end(l, t_b, t_b + len_l - 1, tq, result);
-                if(t_b + len_l <= tq){
-                    decompress_end(right_rule(val), t_b+len_l, t_e, tq, result);
+                auto mid = t_b + len_l -1;
+                if(mid >= t_i){
+                    decompress_end(l, t_b, mid, t_i, t_j, result);
                 }
-            }else if(t_b <= tq){
+                if(mid+1 <= t_j){
+                    decompress_end(right_rule(val), t_b+len_l, t_e, t_i, t_j, result);
+                }
+            }else if(t_i <= t_b && t_b <= t_j){
                 result.push_back(val);
             }
         }
 
-        void update_extremes_beg(value_type val, size_type t_b, size_type t_e, size_type tq, value_type &min, value_type &max){
+        void update_extremes_beg(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, value_type &min, value_type &max){
             if(val >= m_alpha) {
                 size_type cmin, cmax;
                 std::tie(cmin, cmax) = extremes(val);
-                if(cmin > min && cmax < max) return;
+                if (cmin > min && cmax < max) return;
                 auto l = left_rule(val);
                 auto len_l = length(l);
-                if (t_b + len_l - 1 >= tq) {
-                    update_extremes_beg(l, t_b, t_b + len_l - 1, tq, min, max);
+                auto mid = t_b + len_l - 1;
+                if (mid >= t_i) {
+                    update_extremes_beg(l, t_b, mid, t_i, t_j, min, max);
                 }
-                update_extremes_beg(right_rule(val), t_b+len_l, t_e, tq, min, max);
-            }else if(t_b >= tq){
+                if (mid + 1 <= t_j){
+                    update_extremes_beg(right_rule(val), mid + 1, t_e, t_i, t_j, min, max);
+                }
+            }else if(t_i <= t_b && t_b <= t_j){
                 if(val < min) min = val;
                 if(val > max) max = val;
             }
         }
 
-        void update_extremes_end(value_type val, size_type t_b, size_type t_e, size_type tq, value_type &min, value_type &max){
+        void update_extremes_end(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, value_type &min, value_type &max){
             if(val >= m_alpha) {
                 size_type cmin, cmax;
                 std::tie(cmin, cmax) = extremes(val);
                 if(cmin > min && cmax < max) return;
                 auto l = left_rule(val);
                 auto len_l = length(l);
-                update_extremes_end(l, t_b, t_b + len_l - 1, tq, min, max);
-                if(t_b + len_l <= tq) {
-                    update_extremes_end(right_rule(val), t_b + len_l, t_e, tq, min, max);
+                auto mid = t_b + len_l - 1;
+                if (mid >= t_i) {
+                    update_extremes_end(l, t_b, mid, t_i, t_j, min, max);
                 }
-            }else if(t_b <= tq){
+                if (mid + 1 <= t_j){
+                    update_extremes_end(right_rule(val), mid + 1, t_e, t_i, t_j, min, max);
+                }
+            }else if(t_i <= t_b && t_b <= t_j){
                 if(val < min) min = val;
                 if(val > max) max = val;
             }
@@ -342,43 +394,14 @@ namespace cds {
 
         repair_sampling(){};
 
-        repair_sampling(const std::vector<value_type> &log, const size_type period){
-            m_period = period;
-            m_last_t = log.size()-1;
-            int32_t max_value = 0;
-            std::vector<int32_t> aux_log, terminals;
-            std::map<int32_t, char> map_terminals;
-            for(size_type i = 0; i < log.size(); ++i){
-                if(i % m_period == 0){
-                    aux_log.push_back(-1);
-                }
-                aux_log.push_back(log[i]);
-                if(log[i] > max_value) max_value = log[i];
-            }
-            add_splits(aux_log, terminals, map_terminals);
-            size_type length_log = aux_log.size();
-            int* log_repair = new int[length_log];
-            std::cout << length_log << std::endl;
-            sort(terminals.begin(), terminals.end());
-            auto m_zero_value = translate_log(aux_log, terminals, log_repair);
-            aux_log.clear();
-            //3. We apply repair over the log
-            repair m_repair_algo;
-            int total_MB = ::util::memory::total_memory_megabytes() * 0.8;
-            std::cout << total_MB << std::endl;
-            m_repair_algo.run(log_repair, length_log, total_MB);
-            reverse_translation(m_repair_algo, m_zero_value, terminals);
-            std::cout << "Last in c: " << m_repair_algo.c[m_repair_algo.lenC-1] << std::endl;
-            m_alpha = m_repair_algo.alpha;
-            //6. We add extra information to the rules
-            add_extra_info_rules(m_repair_algo);
-            samples(m_repair_algo);
-            m_values = std::vector<value_type>(m_repair_algo.lenC);
-            for(auto i = 0; i < m_values.size(); ++i){
-                m_values[i] = m_repair_algo.c[i];
-            }
+        repair_sampling(const std::string &file, const size_type period){
+            std::vector<value_type> log;
+            ::util::file::read_from_file(file, log);
+            construction(log, period);
+        }
 
-            std::cout << m_alpha << std::endl;
+        repair_sampling(const std::vector<value_type> &log, const size_type period){
+           construction(log, period);
         }
 
 
@@ -399,7 +422,7 @@ namespace cds {
             std::vector<value_type> result;
             auto slot = locate_slot(i);
             value_type val = m_values[slot.entry];
-            decompress_beg(val, slot.t_b, slot.t_e, i, result);
+            decompress_beg(val, slot.t_b, slot.t_e, i, j, result);
             auto c_entry = slot.entry+1;
             auto t_b = slot.t_e + 1;
             auto t_e = slot.t_e+length(m_values[c_entry]);
@@ -409,7 +432,7 @@ namespace cds {
                 t_b = t_e + 1;
                 t_e = t_e + length(m_values[c_entry]);
             }
-            decompress_end(m_values[c_entry], t_b, t_e, j, result);
+            decompress_end(m_values[c_entry], t_b, t_e, i, j, result);
             return result;
         }
 
@@ -500,8 +523,11 @@ namespace cds {
             written_bytes += sdsl::write_member(m_period, out, child, "period");
             written_bytes += sdsl::write_member(m_alpha, out, child, "alpha");
             written_bytes += sdsl::write_member(m_last_t, out, child, "last_t");
+            written_bytes += sdsl::write_member(m_values.size(), out, child, "values_size");
             written_bytes += sdsl::serialize_vector(m_values, out, child, "values");
+            written_bytes += sdsl::write_member(m_samples.size(), out, child, "samples_size");
             written_bytes += sdsl::serialize_vector(m_samples, out, child, "samples");
+            written_bytes += sdsl::write_member(m_rules.size(), out, child, "rules_size");
             written_bytes += sdsl::serialize_vector(m_rules, out, child, "rules");
             written_bytes += m_extra_info_length.serialize(out, child, "extra_info_length");
             written_bytes += m_extra_info_values.serialize(out, child, "extra_info_values");
@@ -511,12 +537,18 @@ namespace cds {
         }
 
         void load(std::istream &in){
-            uint64_t m_snap_size = 0;
+            uint64_t m_rules_size = 0, m_values_size=0, m_samples_size = 0;
             sdsl::read_member(m_period, in);
             sdsl::read_member(m_alpha, in);
             sdsl::read_member(m_last_t, in);
+            sdsl::read_member(m_values_size, in);
+            m_values.resize(m_values_size);
             sdsl::load_vector(m_values, in);
+            sdsl::read_member(m_samples_size, in);
+            m_samples.resize(m_samples_size);
             sdsl::load_vector(m_samples, in);
+            sdsl::read_member(m_rules_size, in);
+            m_rules.resize(m_rules_size);
             sdsl::load_vector(m_rules, in);
             m_extra_info_length.load(in);
             m_extra_info_values.load(in);

@@ -61,3 +61,9 @@ include_directories("${PROJECT_SOURCE_DIR}/external/googletest/include"
 
 add_executable(template_executable src/main.cpp)
 target_link_libraries(template_executable libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(repair_sampling_test test/test.cpp)
+target_link_libraries(repair_sampling_test libRepairGN sdsl divsufsort divsufsort64 gtest)
+
+add_executable(vector_generator test/vector_generator.cpp)
+target_link_libraries(vector_generator libRepairGN sdsl divsufsort divsufsort64)

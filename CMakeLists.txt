@@ -9,7 +9,7 @@ set(PROJECT_CONTACT "adrian.gbrandon@udc.es")
 
 
 #Change to "Debug" when you need it
-set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_BUILD_TYPE "Release")
 
 # C++11 compiler Check
 if(NOT CMAKE_CXX_COMPILER_VERSION) # work around for cmake versions smaller than 2.8.10
@@ -70,6 +70,9 @@ target_link_libraries(access libRepairGN sdsl divsufsort divsufsort64)
 
 add_executable(extremes src/extremes.cpp)
 target_link_libraries(extremes libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(times src/times.cpp)
+target_link_libraries(times libRepairGN sdsl divsufsort divsufsort64)
 
 add_executable(repair_sampling_test test/test.cpp)
 target_link_libraries(repair_sampling_test libRepairGN sdsl divsufsort divsufsort64 gtest)

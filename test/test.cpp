@@ -36,7 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 
-std::string vector_int_file = "vector_int_file.bin";
+std::string vector_int_file = "jkh.sal";
 std::string index_file = "repair_sampling.idx";
 uint64_t period = 80;
 
@@ -66,7 +66,7 @@ TEST (RepairSamplingTest, Load) {
 
 }
 
-TEST (RepairSamplingTest, Acesss1) {
+TEST (RepairSamplingTest, Access1) {
     cds::repair_sampling<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
@@ -79,8 +79,8 @@ TEST (RepairSamplingTest, Acesss1) {
     }
 }
 
-TEST (RepairSamplingTest, AcesssOffset) {
-    uint64_t offset = 40;
+TEST (RepairSamplingTest, AccessOffset) {
+    uint64_t offset = 3;
     cds::repair_sampling<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
@@ -96,7 +96,7 @@ TEST (RepairSamplingTest, AcesssOffset) {
 }
 
 TEST (RepairSamplingTest, Extremes) {
-    uint64_t offset = 40;
+    uint64_t offset = 3;
     cds::repair_sampling<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
@@ -106,8 +106,8 @@ TEST (RepairSamplingTest, Extremes) {
         auto sol = m_structure.extremes(i,i+offset);
         int32_t min = INT32_MAX, max = 0;
         for(uint64_t j = 0; j <= offset; ++j){
-            if(min > orig[j]) min = orig[j];
-            if(max < orig[j]) max = orig[j];
+            if(min > orig[i+j]) min = orig[i+j];
+            if(max < orig[i+j]) max = orig[i+j];
         }
         ASSERT_EQ(sol.first, min);
         ASSERT_EQ(sol.second, max);

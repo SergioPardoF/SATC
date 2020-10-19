@@ -45,5 +45,6 @@ int main(int argc, char** argv) {
     std::string index_file = argv[3];
     cds::repair_sampling<> m_structure(input_file, period);
     sdsl::store_to_file(m_structure, index_file);
+    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
 
 }

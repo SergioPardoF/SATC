@@ -68,6 +68,7 @@ namespace cds {
 
     public:
         const size_type &period = m_period;
+        const size_type &last_t = m_last_t;
 
     private:
 

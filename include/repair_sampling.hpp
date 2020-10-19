@@ -181,7 +181,7 @@ namespace cds {
             m_rules.resize(m_repair_algo.lenR*2);
             for(uint32_t i = 0; i<m_repair_algo.lenR; i++){
                 size_type t = 0;
-                value_type min_value = 0, max_value = 0;
+                value_type min_value = INT32_MAX, max_value = 0;
                 int32_t rule = i +  m_alpha;
                 m_rules[2*i]= (int32_t) m_repair_algo.rules[i].left;
                 m_rules[2*i+1] = (int32_t) m_repair_algo.rules[i].right;
@@ -451,8 +451,8 @@ namespace cds {
                 t_b = t_e + 1;
                 t_e = t_e + length(m_values[c_entry]);
             }
-            update_extremes_beg(m_values[slot.entry], slot.t_b, slot.t_e, i, min, max);
-            update_extremes_end(m_values[c_entry], t_b, t_e, j, min, max);
+            update_extremes_beg(m_values[slot.entry], slot.t_b, slot.t_e, i, j, min, max);
+            update_extremes_end(m_values[c_entry], t_b, t_e, i, j, min, max);
             return {min, max};
         }
 

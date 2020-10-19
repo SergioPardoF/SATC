@@ -38,7 +38,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 std::string vector_int_file = "vector_int_file.bin";
 std::string index_file = "repair_sampling.idx";
-uint64_t period = 100;
+uint64_t period = 80;
 
 TEST (RepairSamplingTest, Construction) {
     cds::repair_sampling<> m_structure(vector_int_file, period);
@@ -96,7 +96,22 @@ TEST (RepairSamplingTest, AcesssOffset) {
 }
 
 TEST (RepairSamplingTest, Extremes) {
+    uint64_t offset = 40;
+    cds::repair_sampling<> m_structure;
+    sdsl::load_from_file(m_structure, index_file);
 
+    std::vector<uint32_t> orig;
+    ::util::file::read_from_file(vector_int_file, orig);
+    for(uint64_t i = 0; i < orig.size()-offset; ++i){
+        auto sol = m_structure.extremes(i,i+offset);
+        int32_t min = INT32_MAX, max = 0;
+        for(uint64_t j = 0; j <= offset; ++j){
+            if(min > orig[j]) min = orig[j];
+            if(max < orig[j]) max = orig[j];
+        }
+        ASSERT_EQ(sol.first, min);
+        ASSERT_EQ(sol.second, max);
+    }
 }
 
 int main(int argc, char** argv) {

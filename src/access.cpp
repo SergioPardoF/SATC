@@ -39,6 +39,7 @@ int main(int argc, char** argv) {
 
     if(argc != 4){
         std::cout << "Usage: " << argv[0] << " index_file i j" << std::endl;
+        return 1;
     }
     std::string index_file = argv[1];
     uint64_t i = std::atoll(argv[2]);

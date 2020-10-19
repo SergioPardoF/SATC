@@ -38,6 +38,7 @@ int main(int argc, char** argv) {
 
     if(argc != 4){
         std::cout << "Usage: " << argv[0] << " index_file i j" << std::endl;
+        return 1;
     }
     std::string index_file = argv[1];
     uint64_t i = atoll(argv[2]);
@@ -46,7 +47,7 @@ int main(int argc, char** argv) {
     sdsl::load_from_file(m_structure, index_file);
     auto sol = m_structure.extremes(i, j);
     std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;
-    
+
 
 
 }

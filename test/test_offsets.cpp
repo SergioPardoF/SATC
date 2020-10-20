@@ -32,16 +32,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 #include <gtest/gtest.h>
-#include <repair_sampling.hpp>
+#include <repair_sampling_offsets.hpp>
 #include <vector>
 
 
 std::string vector_int_file = "jkh.sal";
-std::string index_file = "repair_sampling.idx";
-uint64_t period = 7553233;
+std::string index_file = "repair_sampling_offsets.idx";
+uint64_t period = 7000;
 
 TEST (RepairSamplingTest, Construction) {
-    cds::repair_sampling<> m_structure(vector_int_file, period);
+    cds::repair_sampling_offset<> m_structure(vector_int_file, period);
     std::vector<uint32_t> orig, sol;
     ::util::file::read_from_file(vector_int_file, orig);
     sol = m_structure.decompress();
@@ -53,7 +53,7 @@ TEST (RepairSamplingTest, Construction) {
 }
 
 TEST (RepairSamplingTest, Load) {
-    cds::repair_sampling<> m_structure;
+    cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
     std::vector<uint32_t> orig, sol;
@@ -67,7 +67,7 @@ TEST (RepairSamplingTest, Load) {
 }
 
 TEST (RepairSamplingTest, Access1) {
-    cds::repair_sampling<> m_structure;
+    cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
     std::vector<uint32_t> orig;
@@ -81,7 +81,7 @@ TEST (RepairSamplingTest, Access1) {
 
 TEST (RepairSamplingTest, AccessOffset) {
     uint64_t offset = 40;
-    cds::repair_sampling<> m_structure;
+    cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
     std::vector<uint32_t> orig;
@@ -97,7 +97,7 @@ TEST (RepairSamplingTest, AccessOffset) {
 
 TEST (RepairSamplingTest, Extremes) {
     uint64_t offset = 40;
-    cds::repair_sampling<> m_structure;
+    cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
     std::vector<uint32_t> orig;

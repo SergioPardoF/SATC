@@ -31,23 +31,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Created by Adrián on 17/10/2020.
 //
 
+
 #include <iostream>
-#include <repair_sampling_offsets.hpp>
+#include <repair_sampling.hpp>
+#include <dac_helper.hpp>
 
 int main(int argc, char** argv) {
 
     if(argc != 4){
-        std::cout << "Usage: " << argv[0] << " input_file period index_file" << std::endl;
+        std::cout << "Usage: " << argv[0] << " index_file i j" << std::endl;
         return 1;
     }
-    std::string input_file = argv[1];
-    uint32_t period = atoi(argv[2]);
-    std::string index_file = argv[3];
-
-    cds::repair_sampling_offset<> m_structure(input_file, period);
-    sdsl::store_to_file(m_structure, index_file);
-    std::cout << "Last t: " << m_structure.last_t << std::endl;
-    std::cout << "Samples: " << m_structure.samples.size() << std::endl;
-    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
+    std::string index_file = argv[1];
+    uint64_t i = std::atoll(argv[2]);
+    uint64_t j = std::atoll(argv[3]);
+    cds::dac_vector_dp_v2<> m_structure;
+    sdsl::load_from_file(m_structure, index_file);
+    auto sol = cds::dac_helper::access(m_structure, i, j);
+    std::cout << "Size: " << sol.size() << std::endl;
+    if(sol.size()){
+        std::cout << "Elements: " << sol[0];
+        for(uint64_t v = 1; v < sol.size(); ++v){
+            std::cout << ", " << sol[v];
+        }
+        std::cout << std::endl;
+    }
 
 }

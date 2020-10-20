@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 #include <iostream>
-#include <repair_sampling.hpp>
+#include <repair_sampling_offsets.hpp>
 
 int main(int argc, char** argv) {
 
@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
     std::string index_file = argv[1];
     uint64_t i = atoll(argv[2]);
     uint64_t j = atoll(argv[3]);
-    cds::repair_sampling<> m_structure;
+    cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
     auto sol = m_structure.extremes(i, j);
     std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;

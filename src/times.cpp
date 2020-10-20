@@ -32,7 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 #include <iostream>
-#include <repair_sampling.hpp>
+#include <repair_sampling_offsets.hpp>
 #include <random>
 #include <time_util.hpp>
 
@@ -41,7 +41,7 @@ std::vector<std::pair<uint64_t, uint64_t>> ranges(uint64_t numbers, uint64_t len
     while(res.size() < numbers){
         uint64_t pos = rand() % last;
         if(pos + length < last){
-            res.push_back({pos, pos + length});
+            res.emplace_back(pos, pos + length);
         }
     }
     return res;
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     std::string index_file = argv[1];
     uint64_t length = std::atoll(argv[2]);
     uint64_t number = std::atoll(argv[3]);
-    cds::repair_sampling<> m_structure;
+    cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
     auto operations = ranges(number, length, m_structure.last_t);
     if(strcmp(argv[4], "access")== 0){
@@ -68,8 +68,8 @@ int main(int argc, char** argv) {
        }
        auto t1 = ::util::time::user::now();
        auto micr = ::util::time::duration_cast<::util::time::microseconds>(t1-t0);
-       std::cout << "Access operations took: " << micr << "(microseconds)." << std::endl;
-
+       std::cout << "Access operations took: " << micr << " (microseconds)." << std::endl;
+       std::cout << "Each query took: " << micr/(double) operations.size() << " (microseconds)." << std::endl;
     }else if (strcmp(argv[4], "extremes") == 0){
         auto t0 = ::util::time::user::now();
         for(const auto &op : operations){
@@ -77,7 +77,9 @@ int main(int argc, char** argv) {
         }
         auto t1 = ::util::time::user::now();
         auto micr = ::util::time::duration_cast<::util::time::microseconds>(t1-t0);
-        std::cout << "Extremes operations took: " << micr << "(microseconds)." << std::endl;
+        std::cout << "Extremes operations took: " << micr << " (microseconds)." << std::endl;
+        std::cout << "Each query took: " << micr/(double) operations.size() << " (microseconds)." << std::endl;
+
     }else{
         std::cout << "Operation " << argv[4] << " is not supported." << std::endl;
     }

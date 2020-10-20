@@ -9,7 +9,7 @@ set(PROJECT_CONTACT "adrian.gbrandon@udc.es")
 
 
 #Change to "Debug" when you need it
-set(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Debug")
 
 # C++11 compiler Check
 if(NOT CMAKE_CXX_COMPILER_VERSION) # work around for cmake versions smaller than 2.8.10
@@ -65,17 +65,29 @@ target_link_libraries(main libRepairGN sdsl divsufsort divsufsort64)
 add_executable(build src/build.cpp)
 target_link_libraries(build libRepairGN sdsl divsufsort divsufsort64)
 
+add_executable(build_dac src/build_dac.cpp)
+target_link_libraries(build_dac libRepairGN sdsl divsufsort divsufsort64)
+
 add_executable(access src/access.cpp)
 target_link_libraries(access libRepairGN sdsl divsufsort divsufsort64)
 
+add_executable(access_dac src/access_dac.cpp)
+target_link_libraries(access_dac libRepairGN sdsl divsufsort divsufsort64)
+
 add_executable(extremes src/extremes.cpp)
 target_link_libraries(extremes libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(extremes_dac src/extremes_dac.cpp)
+target_link_libraries(extremes_dac libRepairGN sdsl divsufsort divsufsort64)
 
 add_executable(times src/times.cpp)
 target_link_libraries(times libRepairGN sdsl divsufsort divsufsort64)
 
 add_executable(repair_sampling_test test/test.cpp)
 target_link_libraries(repair_sampling_test libRepairGN sdsl divsufsort divsufsort64 gtest)
+
+add_executable(repair_sampling_offsets_test test/test_offsets.cpp)
+target_link_libraries(repair_sampling_offsets_test libRepairGN sdsl divsufsort divsufsort64 gtest)
 
 add_executable(vector_generator test/vector_generator.cpp)
 target_link_libraries(vector_generator libRepairGN sdsl divsufsort divsufsort64)

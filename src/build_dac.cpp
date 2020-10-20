@@ -28,26 +28,26 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 //
-// Created by Adrián on 17/10/2020.
+// Created by Adrián on 20/10/2020.
 //
 
 #include <iostream>
-#include <repair_sampling_offsets.hpp>
+#include <dac.hpp>
+#include <file_util.hpp>
 
 int main(int argc, char** argv) {
 
-    if(argc != 4){
-        std::cout << "Usage: " << argv[0] << " input_file period index_file" << std::endl;
+    if(argc != 3){
+        std::cout << "Usage: " << argv[0] << " input_file index_file" << std::endl;
         return 1;
     }
     std::string input_file = argv[1];
-    uint32_t period = atoi(argv[2]);
-    std::string index_file = argv[3];
+    std::string index_file = argv[2];
 
-    cds::repair_sampling_offset<> m_structure(input_file, period);
-    sdsl::store_to_file(m_structure, index_file);
-    std::cout << "Last t: " << m_structure.last_t << std::endl;
-    std::cout << "Samples: " << m_structure.samples.size() << std::endl;
-    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
+    std::vector<int> input_vector;
+    ::util::file::read_from_file(input_file, input_vector);
+    cds::dac_vector_dp_v2<> m_dac(input_vector);
+    sdsl::store_to_file(m_dac, index_file);
+    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_dac, ::util::file::remove_extension(index_file) + ".html");
 
 }

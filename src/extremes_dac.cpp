@@ -32,22 +32,23 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
 #include <iostream>
+#include <dac_helper.hpp>
 #include <repair_sampling_offsets.hpp>
 
 int main(int argc, char** argv) {
 
     if(argc != 4){
-        std::cout << "Usage: " << argv[0] << " input_file period index_file" << std::endl;
+        std::cout << "Usage: " << argv[0] << " index_file i j" << std::endl;
         return 1;
     }
-    std::string input_file = argv[1];
-    uint32_t period = atoi(argv[2]);
-    std::string index_file = argv[3];
+    std::string index_file = argv[1];
+    uint64_t i = atoll(argv[2]);
+    uint64_t j = atoll(argv[3]);
+    cds::dac_vector_dp_v2<> m_structure;
+    sdsl::load_from_file(m_structure, index_file);
+    auto sol = cds::dac_helper::extremes(m_structure, i, j);
+    std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;
 
-    cds::repair_sampling_offset<> m_structure(input_file, period);
-    sdsl::store_to_file(m_structure, index_file);
-    std::cout << "Last t: " << m_structure.last_t << std::endl;
-    std::cout << "Samples: " << m_structure.samples.size() << std::endl;
-    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
+
 
 }

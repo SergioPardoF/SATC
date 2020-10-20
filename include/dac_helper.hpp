@@ -28,26 +28,43 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 //
-// Created by Adrián on 17/10/2020.
+// Created by Adrián on 20/10/2020.
 //
 
-#include <iostream>
-#include <repair_sampling_offsets.hpp>
+#ifndef REPAIR_SAMPLING_DAC_HELPER_HPP
+#define REPAIR_SAMPLING_DAC_HELPER_HPP
 
-int main(int argc, char** argv) {
+#include <limits>
+#include <vector>
 
-    if(argc != 4){
-        std::cout << "Usage: " << argv[0] << " input_file period index_file" << std::endl;
-        return 1;
+namespace cds {
+
+    namespace dac_helper {
+
+        template<class Container>
+        std::pair<int, int> extremes(Container &c, uint64_t i, uint64_t j){
+            int min = std::numeric_limits<int>::max();
+            int max = 0;
+            for(auto k = i ; k <= j; ++k){
+                auto val = c[k];
+                if(val < min) min = val;
+                if(val > max) max = val;
+            }
+            return {min, max};
+        }
+
+        template<class Container>
+        std::vector<int> access(Container &c, uint64_t i, uint64_t j){
+            std::vector<int> res;
+            for(auto k = i ; k <= j; ++k){
+                res.push_back(c[k]);
+            }
+            return res;
+        }
+
+
+
     }
-    std::string input_file = argv[1];
-    uint32_t period = atoi(argv[2]);
-    std::string index_file = argv[3];
-
-    cds::repair_sampling_offset<> m_structure(input_file, period);
-    sdsl::store_to_file(m_structure, index_file);
-    std::cout << "Last t: " << m_structure.last_t << std::endl;
-    std::cout << "Samples: " << m_structure.samples.size() << std::endl;
-    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
-
 }
+
+#endif //REPAIR_SAMPLING_DAC_HELPER_HPP

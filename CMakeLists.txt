@@ -83,8 +83,14 @@ target_link_libraries(extremes_dac libRepairGN sdsl divsufsort divsufsort64)
 add_executable(times src/times.cpp)
 target_link_libraries(times libRepairGN sdsl divsufsort divsufsort64)
 
-add_executable(repair_sampling_test test/test.cpp)
-target_link_libraries(repair_sampling_test libRepairGN sdsl divsufsort divsufsort64 gtest)
+add_executable(similarity src/similarity.cpp)
+target_link_libraries(similarity libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(similarity_dac src/similarity_dac.cpp)
+target_link_libraries(similarity_dac libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(similarity_levels src/similarity_levels.cpp)
+target_link_libraries(similarity_levels libRepairGN sdsl divsufsort divsufsort64)
 
 add_executable(repair_sampling_offsets_test test/test_offsets.cpp)
 target_link_libraries(repair_sampling_offsets_test libRepairGN sdsl divsufsort divsufsort64 gtest)

@@ -56,6 +56,10 @@ namespace cds {
             size_type t_b;
             size_type t_e;
         } slot_type;
+        typedef struct {
+            value_type min, max;
+            size_type t_min, t_max;
+        } result_type;
 
 
     private:
@@ -68,6 +72,12 @@ namespace cds {
         dac_vector_dp_v2<> m_extra_info_values;
         std::vector<size_type> m_samples;
         std::vector<offset_type> m_offsets;
+
+        size_type m_lower_bound;
+        size_type m_uppper_bound;
+        size_type m_window_size;
+        slot_type m_curr_slot;
+        size_type m_curr_tb, m_curr_te;
 
     public:
         const size_type &period = m_period;
@@ -183,7 +193,7 @@ namespace cds {
             return m_rules[r_i*2+1];
         }
 
-        size_type length(value_type val){
+        inline size_type length(value_type val){
             if(val < m_alpha){
                 return 1;
             }else{
@@ -290,6 +300,62 @@ namespace cds {
                 if(val > max) max = val;
             }
         }
+
+        void update_extremes_interval_time(value_type val, size_type t_b, size_type t_e,
+                                            size_type t_i, size_type t_j,
+                                            int32_t &min, int32_t &max,
+                                            size_type &t_min, size_type &t_max){
+            if(val >= m_alpha) {
+                int32_t cmin, cmax;
+                std::tie(cmin, cmax) = extremes(val);
+                if (cmin > min && cmax < max) return;
+                auto l = left_rule(val);
+                auto len_l = length(l);
+                auto mid = t_b + len_l - 1;
+                if (mid >= t_i) {
+                    update_extremes_interval_time(l, t_b, mid, t_i, t_j, min, max, t_min, t_max);
+                }
+                if (mid + 1 <= t_j){
+                    update_extremes_interval_time(right_rule(val), mid + 1, t_e, t_i, t_j, min, max, t_min, t_max);
+                }
+            }else if(t_i <= t_b && t_b <= t_j){
+                if(static_cast<int32_t >(val) < min) {
+                    min = val;
+                    t_min = t_b;
+                }
+                if(static_cast<int32_t >(val) > max) {
+                    max = val;
+                    t_max = t_b;
+                }
+            }
+        }
+
+        bool find_time_value(value_type val, size_type t_b, value_type value, size_type &time){
+            if(val >= m_alpha) {
+                value_type cmin, cmax;
+                std::tie(cmin, cmax) = extremes(val);
+                if(cmin <= value && value <= cmax ){
+                    auto l = left_rule(val);
+                    if(find_time_value(l, t_b, value, time)){
+                        return true;
+                    };
+                    auto r = right_rule(val);
+                    if(find_time_value(r, t_b + length(l), value, time)){
+                        return true;
+                    };
+                }else{
+                   return false;
+                }
+
+            }else if(val == value){
+                time = t_b;
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+
         /*void update_extremes_beg(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, value_type &min, value_type &max){
             if(val >= m_alpha) {
                 size_type cmin, cmax;
@@ -330,6 +396,103 @@ namespace cds {
             }
         }*/
 
+        result_type get_min_max_time(){
+            /*if(m_curr_slot.t_e < m_curr_tb){
+                m_curr_slot = slot_type{m_curr_slot.entry+1, m_curr_slot.t_e+1,
+                                        m_curr_slot.t_e+length(m_values[m_curr_slot.entry+1])};
+            }*/
+            size_type t_e = m_curr_slot.t_e, t_b = m_curr_slot.t_b;
+            int32_t min = INT32_MAX, max = -1;
+            int32_t c_min, c_max;
+            size_type t_min, t_max;
+            size_type t_b_min = t_b, t_b_max = t_b, c_entry_min = m_curr_slot.entry, c_entry_max = m_curr_slot.entry;
+            if(m_curr_slot.t_b <= m_curr_tb){
+                update_extremes_interval_time(m_values[m_curr_slot.entry], m_curr_slot.t_b, m_curr_slot.t_e,
+                                              m_curr_tb, m_curr_te,min, max, t_min, t_max);
+            }
+            //size_type inc = 1;
+            bool min_updated = false, max_updated = false;
+            while(m_curr_slot.entry + 1 < m_values.size()){
+                auto val = m_values[m_curr_slot.entry+1];
+                t_b = t_e + 1;
+                t_e = t_e + length(val);
+                if(t_e > m_curr_te) break;
+                std::tie(c_min, c_max) = extremes(val);
+                if(min > c_min){
+                    min = c_min;
+                    c_entry_min = m_curr_slot.entry+1;
+                    t_b_min = t_b;
+                    min_updated = true;
+                }
+                if(max < c_max){
+                    max = c_max;
+                    c_entry_max = m_curr_slot.entry+1;
+                    t_b_max = t_b;
+                    max_updated = true;
+                }
+                m_curr_slot.entry++;
+                m_curr_slot.t_b = t_b;
+                m_curr_slot.t_e = t_e;
+            }
+
+            if(min_updated){
+                find_time_value(m_values[c_entry_min], t_b_min, min, t_min);
+            }
+            if(max_updated){
+                find_time_value(m_values[c_entry_max], t_b_max, max, t_max);
+            }
+            if(m_curr_slot.entry+1 < m_values.size() && m_curr_slot.t_e+1 <= m_curr_te){
+                auto val = m_values[m_curr_slot.entry+1];
+                m_curr_slot.entry++;
+                m_curr_slot.t_b = m_curr_slot.t_e+1;
+                m_curr_slot.t_e = m_curr_slot.t_e + length(val);
+                update_extremes_interval_time(val, t_b, t_e, m_curr_tb, m_curr_te,min, max, t_min, t_max);
+            }
+            return result_type{static_cast<value_type >(min), static_cast<value_type >(max),
+                               t_min - m_lower_bound, t_max - m_lower_bound};
+        }
+
+        /*result_type get_min_max_time(){
+            if(m_curr_slot.t_e < m_curr_tb){
+                m_curr_slot = slot_type{m_curr_slot.entry+1, m_curr_slot.t_e+1,
+                                        m_curr_slot.t_e+length(m_values[m_curr_slot.entry+1])};
+            }
+            auto c_entry = m_curr_slot.entry+1;
+            auto t_b = m_curr_slot.t_e + 1;
+            auto t_e = m_curr_slot.t_e+length(m_values[c_entry]);
+            value_type min = INT32_MAX, max = 0;
+            size_type t_min, t_max;
+            value_type c_min, c_max;
+            size_type t_b_min = t_b, t_b_max = t_b, c_entry_min = c_entry, c_entry_max = c_entry;
+            bool complete_element = false;
+            while(t_e < m_curr_te){
+                std::tie(c_min, c_max) = extremes(m_values[c_entry]);
+                if(min > c_min){
+                    min = c_min;
+                    c_entry_min = c_entry;
+                    t_b_min = t_b;
+                }
+                if(max < c_max){
+                    max = c_max;
+                    c_entry_max = c_entry;
+                    t_b_max = t_b;
+                }
+                ++c_entry;
+                t_b = t_e + 1;
+                t_e = t_e + length(m_values[c_entry]);
+                complete_element = true;
+            }
+            if(complete_element){
+                find_time_value(m_values[c_entry_min], t_b_min, min, t_min);
+                find_time_value(m_values[c_entry_max], t_b_max, max, t_max);
+            }
+            update_extremes_interval_time(m_values[m_curr_slot.entry], m_curr_slot.t_b, m_curr_slot.t_e,
+                    m_curr_tb, m_curr_te,min, max, t_min, t_max);
+            update_extremes_interval_time(m_values[c_entry], t_b, t_e, m_curr_tb, m_curr_te,
+                                          min, max, t_min, t_max);
+
+            return result_type{min, max, t_min - m_lower_bound, t_max - m_lower_bound};
+        }*/
 
 
     public:
@@ -345,9 +508,6 @@ namespace cds {
         repair_sampling_offset(const std::vector<value_type> &log, const size_type period){
            construction(log, period);
         }
-
-
-
 
 
         std::vector<value_type> decompress(){
@@ -380,22 +540,48 @@ namespace cds {
 
         std::pair<value_type, value_type> extremes(size_type i, size_type j){
             auto slot = locate_slot(i);
-            auto c_entry = slot.entry+1;
-            auto t_b = slot.t_e + 1;
-            auto t_e = slot.t_e+length(m_values[c_entry]);
+            size_type t_e = slot.t_e, t_b = slot.t_b;
             value_type min = INT32_MAX, max = 0;
             value_type c_min, c_max;
-            while(t_e < j){
-                std::tie(c_min, c_max) = extremes(m_values[c_entry]);
+            size_type inc = 1;
+            while(slot.entry + inc < m_values.size()){
+                auto val = m_values[slot.entry+inc];
+                t_b = t_e + 1;
+                t_e = t_e + length(val);
+                if(t_e > j) break;
+                std::tie(c_min, c_max) = extremes(val);
                 if(min > c_min) min = c_min;
                 if(max < c_max) max = c_max;
-                ++c_entry;
-                t_b = t_e + 1;
-                t_e = t_e + length(m_values[c_entry]);
+                ++inc;
             }
-            update_extremes_interval(m_values[slot.entry], slot.t_b, slot.t_e, i, j, min, max);
-            update_extremes_interval(m_values[c_entry], t_b, t_e, i, j, min, max);
+            if(slot.t_b <= i){
+                update_extremes_interval(m_values[slot.entry], slot.t_b, slot.t_e, i, j, min, max);
+            }
+            if(slot.entry + inc < m_values.size() && t_b <= j){
+                t_e = t_e + length(m_values[slot.entry+inc]);
+                update_extremes_interval(m_values[slot.entry+inc], t_b, t_e, i, j, min, max);
+            }
             return {min, max};
+        }
+
+        result_type first(size_type window_size, size_type i, size_type j){
+            m_window_size = window_size;
+            m_lower_bound = i;
+            m_uppper_bound = j;
+            m_curr_tb = m_lower_bound;
+            m_curr_te = m_lower_bound + m_window_size-1;
+            m_curr_slot = locate_slot(m_lower_bound);
+            return get_min_max_time();
+        }
+
+        inline bool exists(){
+            return m_curr_te+1 <= m_uppper_bound ;
+        }
+
+        result_type next(){
+            m_curr_tb = m_curr_te+1;
+            m_curr_te = m_curr_tb + m_window_size -1;
+            return get_min_max_time();
         }
 
         //! Assignment move operation

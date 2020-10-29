@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <gtest/gtest.h>
 #include <repair_sampling_offsets.hpp>
+#include <repair_sampling_offsets_helper.hpp>
 #include <vector>
 
 
@@ -96,13 +97,14 @@ TEST (RepairSamplingTest, AccessOffset) {
 }
 
 TEST (RepairSamplingTest, Extremes) {
-    uint64_t offset = 40;
+    uint64_t offset = 500;
     cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 
     std::vector<uint32_t> orig;
     ::util::file::read_from_file(vector_int_file, orig);
     for(uint64_t i = 0; i < orig.size()-offset; ++i){
+        std::cout << "i: " << i << std::endl;
         auto sol = m_structure.extremes(i,i+offset);
         int32_t min = INT32_MAX, max = 0;
         for(uint64_t j = 0; j <= offset; ++j){
@@ -112,6 +114,80 @@ TEST (RepairSamplingTest, Extremes) {
         ASSERT_EQ(sol.first, min);
         ASSERT_EQ(sol.second, max);
     }
+}
+
+TEST (RepairSamplingTest, SimilarityFunction) {
+    uint64_t window = 500;
+    cds::repair_sampling_offset<> m_structure;
+    sdsl::load_from_file(m_structure, index_file);
+    std::vector<uint32_t> orig;
+    ::util::file::read_from_file(vector_int_file, orig);
+    auto t_s = 0;
+    int32_t min = INT32_MAX, max=-1;
+    uint64_t t_min, t_max;
+    auto min_max_s1 = m_structure.first(window, 0, m_structure.last_t);
+    for(uint64_t i = t_s; i < t_s + window; ++i){
+        auto v = static_cast<int32_t >(orig[i]);
+        if(min > v) {
+            min = v;
+            t_min = i;
+        }
+        if(max < v){
+            max = v;
+            t_max = i;
+        }
+    }
+    ASSERT_EQ(min, min_max_s1.min);
+    ASSERT_EQ(max, min_max_s1.max);
+    ASSERT_EQ(t_min, min_max_s1.t_min);
+    ASSERT_EQ(t_max, min_max_s1.t_max);
+    while(m_structure.exists()){
+        t_s += window;
+        std::cout << "t_s: " << t_s << " a t_e: " << t_s+window-1 << std::endl;
+        min_max_s1 = m_structure.next();
+        min = INT32_MAX, max=-1;
+        for(uint64_t i = t_s; i < std::min(m_structure.last_t, t_s + window); ++i){
+            auto v = static_cast<int32_t >(orig[i]);
+            if(min > v) {
+                min = v;
+                t_min = i;
+            }
+            if(max < v){
+                max = v;
+                t_max = i;
+            }
+        }
+        ASSERT_EQ(min, min_max_s1.min);
+        ASSERT_EQ(max, min_max_s1.max);
+        ASSERT_EQ(t_min, min_max_s1.t_min);
+        ASSERT_EQ(t_max, min_max_s1.t_max);
+
+    }
+
+}
+
+TEST (RepairSamplingTest, Similarity) {
+    uint64_t window = 500;
+    std::vector<uint32_t > s1_values = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4};
+    std::vector<uint32_t > s2_values, s3_values;
+    s2_values.resize(s1_values.size());
+    s3_values.resize(s1_values.size());
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        s2_values[i] = s1_values[i]+2;
+        s3_values[i] = s1_values[i] + rand() % 10 + 2;
+    }
+    cds::repair_sampling_offset<> s1(s1_values, period);
+    cds::repair_sampling_offset<> s2(s2_values, period);
+    cds::repair_sampling_offset<> s3(s3_values, period);
+
+    auto v1 = cds::compute_similarity(s1, s2, 4, 0, s1_values.size()-1, cds::sum_similarity());
+    auto v2 = cds::compute_similarity(s1, s3, 4, 0, s1_values.size()-1, cds::sum_similarity());
+    std::cout << "v1: " << v1 << std::endl;
+    std::cout << "v2: " << v2 << std::endl;
+
+    ASSERT_GT(v2, v1);
+
+
 }
 
 int main(int argc, char** argv) {

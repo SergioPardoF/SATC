@@ -36,6 +36,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <limits>
 #include <vector>
+#include "repair_sampling_offsets_helper.hpp"
 
 namespace cds {
 
@@ -60,6 +61,52 @@ namespace cds {
                 res.push_back(c[k]);
             }
             return res;
+        }
+
+
+
+        template<class Container, class t_similarity>
+        double similarity(Container &c1, Container &c2, uint64_t window, uint64_t i, uint64_t j, const t_similarity &similarity_function){
+            double result = 0;
+            uint64_t blocks = 0;
+            auto lower_bound = i;
+            while(i <= j){
+                int min1 = std::numeric_limits<int>::max();
+                int max1 = -1;
+                uint64_t t_min1, t_max1;
+                for(uint64_t k = i; k <= std::min(i + window-1, j); ++k){
+                    auto v = static_cast<int32_t >(c1[k]);
+                    if(min1 > v) {
+                        min1 = v;
+                        t_min1 = k;
+                    }
+                    if(max1 < v){
+                        max1 = v;
+                        t_max1 = k;
+                    }
+                }
+                int min2 = std::numeric_limits<int>::max();
+                int max2 = -1;
+                uint64_t t_min2, t_max2;
+                for(uint64_t k = i; k <= std::min(i + window-1, j); ++k){
+                    auto v = static_cast<int32_t >(c2[k]);
+                    if(min2 > v) {
+                        min2 = v;
+                        t_min2 = k;
+                    }
+                    if(max2 < v){
+                        max2 = v;
+                        t_max2 = k;
+                    }
+                }
+                auto min_dis = cds::euclidean_distance({min1, t_min1-lower_bound}, {min2, t_min2-lower_bound});
+                auto max_dis = cds::euclidean_distance({max1, t_max1-lower_bound}, {max2, t_max2-lower_bound});
+                result += similarity_function(min_dis, max_dis);
+                i += window;
+                ++blocks;
+            }
+            return result / (double) blocks;
+
         }
 
 

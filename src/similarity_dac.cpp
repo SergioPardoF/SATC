@@ -31,29 +31,27 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Created by Adrián on 17/10/2020.
 //
 
-
 #include <iostream>
+#include <dac_helper.hpp>
 #include <repair_sampling_offsets.hpp>
 
 int main(int argc, char** argv) {
 
-    if(argc != 4){
-        std::cout << "Usage: " << argv[0] << " index_file i j" << std::endl;
+    if(argc != 6){
+        std::cout << "Usage: " << argv[0] << " index_file1 index_file2 i j window_size" << std::endl;
         return 1;
     }
-    std::string index_file = argv[1];
-    uint64_t i = std::atoll(argv[2]);
-    uint64_t j = std::atoll(argv[3]);
-    cds::repair_sampling_offset<> m_structure;
-    sdsl::load_from_file(m_structure, index_file);
-    auto sol = m_structure.access(i, j);
-    std::cout << "Size: " << sol.size() << std::endl;
-    if(sol.size()){
-        std::cout << "Elements: " << sol[0];
-        for(uint64_t v = 1; v < sol.size(); ++v){
-            std::cout << ", " << sol[v];
-        }
-        std::cout << std::endl;
-    }
+    std::string index_file1 = argv[1];
+    std::string index_file2 = argv[2];
+    uint64_t i = std::atoll(argv[3]);
+    uint64_t j = std::atoll(argv[4]);
+    uint64_t window_size = std::atoll(argv[5]);
+    cds::dac_vector_dp_v2<> m_s1, m_s2;
+    sdsl::load_from_file(m_s1, index_file1);
+    sdsl::load_from_file(m_s2, index_file2);
+    auto similarity = cds::dac_helper::similarity(m_s1, m_s2, window_size, i, j, cds::sum_similarity());
+    std::cout << "Similarity value: " << similarity << std::endl;
+
+
 
 }

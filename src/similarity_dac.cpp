@@ -54,7 +54,6 @@ int main(int argc, char** argv) {
     auto files = ::util::file::read_directory(directory);
     std::multimap<double, std::string> map;
     for(const auto &f : files){
-        std::cout << "File: " << f << std::endl;
         auto path_file = directory + f;
         sdsl::load_from_file(m_s2, path_file);
         auto similarity = cds::dac_helper::similarity(m_s1, m_s2, i, j);

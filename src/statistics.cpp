@@ -32,6 +32,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include <iostream>
 #include <file_util.hpp>
+#include <unordered_map>
 
 int main(int argc, char** argv) {
 
@@ -55,9 +56,18 @@ int main(int argc, char** argv) {
     }
     input2.close();
     uint64_t oks = 0;
-    for(uint64_t i = 0; i < lines1.size(); ++i){
-        if(lines1[i].compare(lines2[i]) == 0){
+    std::unordered_map<std::string, bool> map_files;
+    uint64_t pos1 = 0, pos2 = 0;
+    while(pos1 < lines1.size() && pos2 < lines2.size()){
+        if(map_files.find(lines2[pos2]) != map_files.end()){
+            ++pos2;
+        }else if(lines1[pos1] == lines2[pos2]){
             ++oks;
+            ++pos1;
+            ++pos2;
+        }else{
+            map_files.insert({lines1[pos1], true});
+            ++pos1;
         }
     }
     std::cout << oks << " aciertos de " << lines1.size() << " elementos (" << (oks/ (double) lines1.size() * 100) <<"%)"<< std::endl;

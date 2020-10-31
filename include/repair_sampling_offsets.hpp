@@ -286,15 +286,21 @@ namespace cds {
                 size_type cmin, cmax;
                 std::tie(cmin, cmax) = extremes(val);
                 if (cmin > min && cmax < max) return;
-                auto l = left_rule(val);
-                auto len_l = length(l);
-                auto mid = t_b + len_l - 1;
-                if (mid >= t_i) {
-                    update_extremes_interval(l, t_b, mid, t_i, t_j, min, max);
+                if(cmin == cmax){
+                    if(cmin < min) min = cmin;
+                    if(cmin > max) max = cmin;
+                }else{
+                    auto l = left_rule(val);
+                    auto len_l = length(l);
+                    auto mid = t_b + len_l - 1;
+                    if (mid >= t_i) {
+                        update_extremes_interval(l, t_b, mid, t_i, t_j, min, max);
+                    }
+                    if (mid + 1 <= t_j){
+                        update_extremes_interval(right_rule(val), mid + 1, t_e, t_i, t_j, min, max);
+                    }
                 }
-                if (mid + 1 <= t_j){
-                    update_extremes_interval(right_rule(val), mid + 1, t_e, t_i, t_j, min, max);
-                }
+
             }else if(t_i <= t_b && t_b <= t_j){
                 if(val < min) min = val;
                 if(val > max) max = val;
@@ -309,15 +315,27 @@ namespace cds {
                 int32_t cmin, cmax;
                 std::tie(cmin, cmax) = extremes(val);
                 if (cmin > min && cmax < max) return;
-                auto l = left_rule(val);
-                auto len_l = length(l);
-                auto mid = t_b + len_l - 1;
-                if (mid >= t_i) {
-                    update_extremes_interval_time(l, t_b, mid, t_i, t_j, min, max, t_min, t_max);
+                if(cmin == cmax){
+                    if(static_cast<int32_t >(cmin) < min) {
+                        min = cmin;
+                        t_min = std::max(t_b, t_i);
+                    }
+                    if(static_cast<int32_t >(cmin) > max) {
+                        max = cmin;
+                        t_max = std::max(t_b, t_i);
+                    }
+                }else{
+                    auto l = left_rule(val);
+                    auto len_l = length(l);
+                    auto mid = t_b + len_l - 1;
+                    if (mid >= t_i) {
+                        update_extremes_interval_time(l, t_b, mid, t_i, t_j, min, max, t_min, t_max);
+                    }
+                    if (mid + 1 <= t_j){
+                        update_extremes_interval_time(right_rule(val), mid + 1, t_e, t_i, t_j, min, max, t_min, t_max);
+                    }
                 }
-                if (mid + 1 <= t_j){
-                    update_extremes_interval_time(right_rule(val), mid + 1, t_e, t_i, t_j, min, max, t_min, t_max);
-                }
+
             }else if(t_i <= t_b && t_b <= t_j){
                 if(static_cast<int32_t >(val) < min) {
                     min = val;

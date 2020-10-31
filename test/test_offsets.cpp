@@ -103,13 +103,17 @@ TEST (RepairSamplingTest, Extremes) {
 
     std::vector<uint32_t> orig;
     ::util::file::read_from_file(vector_int_file, orig);
-    for(uint64_t i = 0; i < orig.size()-offset; ++i){
+    uint64_t limit = 1;
+    if(offset < orig.size() ){
+        limit = orig.size()-offset;
+    }
+    for(uint64_t i = 0; i < limit; ++i){
         std::cout << "i: " << i << std::endl;
-        auto sol = m_structure.extremes(i,i+offset);
+        auto sol = m_structure.extremes(i,std::min(i + offset, (uint64_t) (orig.size()-1)));
         int32_t min = INT32_MAX, max = 0;
-        for(uint64_t j = 0; j <= offset; ++j){
-            if(min > orig[i+j]) min = orig[i+j];
-            if(max < orig[i+j]) max = orig[i+j];
+        for(uint64_t j = i; j <= std::min(i + offset, (uint64_t) (orig.size()-1)); ++j){
+            if(min > orig[j]) min = orig[j];
+            if(max < orig[j]) max = orig[j];
         }
         ASSERT_EQ(sol.first, min);
         ASSERT_EQ(sol.second, max);

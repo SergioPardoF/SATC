@@ -409,7 +409,6 @@ namespace cds {
                 m_curr_slot.t_e = m_curr_slot.t_e + length(val);
                 update_extremes_interval_time(val, t_b, t_e, m_curr_tb, m_curr_te,min, max, t_min, t_max);
             }
-            std::cout << "min: " << min << " max: " << max << " t_min: " << t_min << " t_max: " << t_max << std::endl;
             return result_type{static_cast<value_type >(min), static_cast<value_type >(max),t_min , t_max };
         }
 

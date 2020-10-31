@@ -37,20 +37,32 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 int main(int argc, char** argv) {
 
-    if(argc != 6){
-        std::cout << "Usage: " << argv[0] << " index_file1 index_file2 i j window_size" << std::endl;
+    if(argc != 5){
+        std::cout << "Usage: " << argv[0] << " index_file1 directory i j" << std::endl;
         return 1;
     }
     std::string index_file1 = argv[1];
-    std::string index_file2 = argv[2];
+    std::string directory = argv[2];
     uint64_t i = std::atoll(argv[3]);
     uint64_t j = std::atoll(argv[4]);
-    uint64_t window_size = std::atoll(argv[5]);
+    if(!::util::file::end_slash(directory)){
+        directory = directory + "/";
+    }
+
     cds::dac_vector_dp_v2<> m_s1, m_s2;
     sdsl::load_from_file(m_s1, index_file1);
-    sdsl::load_from_file(m_s2, index_file2);
-    auto similarity = cds::dac_helper::similarity(m_s1, m_s2, window_size, i, j, cds::sum_similarity());
-    std::cout << "Similarity value: " << similarity << std::endl;
+    auto files = ::util::file::read_directory(directory);
+    std::multimap<double, std::string> map;
+    for(const auto &f : files){
+        std::cout << "File: " << f << std::endl;
+        auto path_file = directory + f;
+        sdsl::load_from_file(m_s2, path_file);
+        auto similarity = cds::dac_helper::similarity(m_s1, m_s2, i, j);
+        map.insert({similarity, f});
+    }
+    for(const auto &it : map) {
+        std::cout << it.second << std::endl;
+    }
 
 
 

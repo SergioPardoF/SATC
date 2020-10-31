@@ -28,44 +28,30 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 //
-// Created by Adrián on 29/10/2020.
+// Created by Adrián on 17/10/2020.
 //
-#include <string>
+
 #include <iostream>
 #include <repair_sampling_offsets.hpp>
-#include <repair_sampling_offsets_helper.hpp>
-#include <map>
 
 int main(int argc, char** argv) {
 
-    if(argc != 6){
-        std::cout << "Usage: " << argv[0] << " sequence directory i j window_size" << std::endl;
+    if(argc != 3){
+        std::cout << "Usage: " << argv[0] << " directory period" << std::endl;
         return 1;
     }
-    std::string index_file1 = argv[1];
-    std::string directory = argv[2];
-    uint64_t i = std::atoll(argv[3]);
-    uint64_t j = std::atoll(argv[4]);
-    uint64_t window_size = std::atoll(argv[5]);
+    std::string directory = argv[1];
+    uint32_t period = atoi(argv[2]);
     if(!::util::file::end_slash(directory)){
         directory = directory + "/";
     }
-
-    cds::repair_sampling_offset<> m_s1, m_s2;
-    sdsl::load_from_file(m_s1, index_file1);
+    std::string repair_directory = directory + "repair/";
+    ::util::file::create_directory(repair_directory);
     auto files = ::util::file::read_directory(directory);
-    std::multimap<double, std::string> map;
     for(const auto &f : files){
-        std::cout << "File: " << f << std::endl;
         auto path_file = directory + f;
-        sdsl::load_from_file(m_s2, path_file);
-        auto similarity = cds::compute_similarity(m_s1, m_s2, window_size, i, j, cds::sum_similarity());
-        map.insert({similarity, f});
+        auto index_file = repair_directory + ::util::file::remove_extension(f)+".repair";
+        cds::repair_sampling_offset<> m_structure(path_file, period);
+        sdsl::store_to_file(m_structure, index_file);
     }
-    for(const auto &it : map) {
-        std::cout << it.second << std::endl;
-    }
-
 }
-
-

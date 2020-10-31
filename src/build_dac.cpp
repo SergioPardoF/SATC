@@ -47,6 +47,9 @@ int main(int argc, char** argv) {
     std::vector<int> input_vector;
     ::util::file::read_from_file(input_file, input_vector);
     cds::dac_vector_dp_v2<> m_dac(input_vector);
+    for(uint64_t i = 0; i < input_vector.size(); ++i){
+        std::cout << m_dac[i] << std::endl;
+    }
     sdsl::store_to_file(m_dac, index_file);
     sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_dac, ::util::file::remove_extension(index_file) + ".html");
 

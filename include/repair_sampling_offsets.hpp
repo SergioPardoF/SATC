@@ -356,51 +356,12 @@ namespace cds {
         }
 
 
-        /*void update_extremes_beg(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, value_type &min, value_type &max){
-            if(val >= m_alpha) {
-                size_type cmin, cmax;
-                std::tie(cmin, cmax) = extremes(val);
-                if (cmin > min && cmax < max) return;
-                auto l = left_rule(val);
-                auto len_l = length(l);
-                auto mid = t_b + len_l - 1;
-                if (mid >= t_i) {
-                    update_extremes_beg(l, t_b, mid, t_i, t_j, min, max);
-                }
-                if (mid + 1 <= t_j){
-                    update_extremes_beg(right_rule(val), mid + 1, t_e, t_i, t_j, min, max);
-                }
-            }else if(t_i <= t_b && t_b <= t_j){
-                if(val < min) min = val;
-                if(val > max) max = val;
-            }
-        }
-
-        void update_extremes_end(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, value_type &min, value_type &max){
-            if(val >= m_alpha) {
-                size_type cmin, cmax;
-                std::tie(cmin, cmax) = extremes(val);
-                if(cmin > min && cmax < max) return;
-                auto l = left_rule(val);
-                auto len_l = length(l);
-                auto mid = t_b + len_l - 1;
-                if (mid >= t_i) {
-                    update_extremes_end(l, t_b, mid, t_i, t_j, min, max);
-                }
-                if (mid + 1 <= t_j){
-                    update_extremes_end(right_rule(val), mid + 1, t_e, t_i, t_j, min, max);
-                }
-            }else if(t_i <= t_b && t_b <= t_j){
-                if(val < min) min = val;
-                if(val > max) max = val;
-            }
-        }*/
-
         result_type get_min_max_time(){
-            /*if(m_curr_slot.t_e < m_curr_tb){
+            if(m_curr_slot.t_e < m_curr_tb){
                 m_curr_slot = slot_type{m_curr_slot.entry+1, m_curr_slot.t_e+1,
                                         m_curr_slot.t_e+length(m_values[m_curr_slot.entry+1])};
-            }*/
+            }
+
             size_type t_e = m_curr_slot.t_e, t_b = m_curr_slot.t_b;
             int32_t min = INT32_MAX, max = -1;
             int32_t c_min, c_max;
@@ -448,51 +409,9 @@ namespace cds {
                 m_curr_slot.t_e = m_curr_slot.t_e + length(val);
                 update_extremes_interval_time(val, t_b, t_e, m_curr_tb, m_curr_te,min, max, t_min, t_max);
             }
-            return result_type{static_cast<value_type >(min), static_cast<value_type >(max),
-                               t_min - m_lower_bound, t_max - m_lower_bound};
+            std::cout << "min: " << min << " max: " << max << " t_min: " << t_min << " t_max: " << t_max << std::endl;
+            return result_type{static_cast<value_type >(min), static_cast<value_type >(max),t_min , t_max };
         }
-
-        /*result_type get_min_max_time(){
-            if(m_curr_slot.t_e < m_curr_tb){
-                m_curr_slot = slot_type{m_curr_slot.entry+1, m_curr_slot.t_e+1,
-                                        m_curr_slot.t_e+length(m_values[m_curr_slot.entry+1])};
-            }
-            auto c_entry = m_curr_slot.entry+1;
-            auto t_b = m_curr_slot.t_e + 1;
-            auto t_e = m_curr_slot.t_e+length(m_values[c_entry]);
-            value_type min = INT32_MAX, max = 0;
-            size_type t_min, t_max;
-            value_type c_min, c_max;
-            size_type t_b_min = t_b, t_b_max = t_b, c_entry_min = c_entry, c_entry_max = c_entry;
-            bool complete_element = false;
-            while(t_e < m_curr_te){
-                std::tie(c_min, c_max) = extremes(m_values[c_entry]);
-                if(min > c_min){
-                    min = c_min;
-                    c_entry_min = c_entry;
-                    t_b_min = t_b;
-                }
-                if(max < c_max){
-                    max = c_max;
-                    c_entry_max = c_entry;
-                    t_b_max = t_b;
-                }
-                ++c_entry;
-                t_b = t_e + 1;
-                t_e = t_e + length(m_values[c_entry]);
-                complete_element = true;
-            }
-            if(complete_element){
-                find_time_value(m_values[c_entry_min], t_b_min, min, t_min);
-                find_time_value(m_values[c_entry_max], t_b_max, max, t_max);
-            }
-            update_extremes_interval_time(m_values[m_curr_slot.entry], m_curr_slot.t_b, m_curr_slot.t_e,
-                    m_curr_tb, m_curr_te,min, max, t_min, t_max);
-            update_extremes_interval_time(m_values[c_entry], t_b, t_e, m_curr_tb, m_curr_te,
-                                          min, max, t_min, t_max);
-
-            return result_type{min, max, t_min - m_lower_bound, t_max - m_lower_bound};
-        }*/
 
 
     public:

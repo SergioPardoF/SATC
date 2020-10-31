@@ -37,8 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 
-std::string vector_int_file = "jkh.sal";
-std::string index_file = "repair_sampling_offsets.idx";
+std::string vector_int_file = "190209_190210_I_KNV_E9J2Q2_7ZE6BE.sal";
+std::string index_file = "repair/190209_190210_I_KNV_E9J2Q2_7ZE6BE.repair";
 uint64_t period = 7000;
 
 TEST (RepairSamplingTest, Construction) {
@@ -117,7 +117,7 @@ TEST (RepairSamplingTest, Extremes) {
 }
 
 TEST (RepairSamplingTest, SimilarityFunction) {
-    uint64_t window = 500;
+    uint64_t window = 1;
     cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
     std::vector<uint32_t> orig;
@@ -126,7 +126,7 @@ TEST (RepairSamplingTest, SimilarityFunction) {
     int32_t min = INT32_MAX, max=-1;
     uint64_t t_min, t_max;
     auto min_max_s1 = m_structure.first(window, 0, m_structure.last_t);
-    for(uint64_t i = t_s; i < t_s + window; ++i){
+    for(uint64_t i = t_s; i < std::min(t_s + window, m_structure.last_t+1); ++i){
         auto v = static_cast<int32_t >(orig[i]);
         if(min > v) {
             min = v;
@@ -143,10 +143,9 @@ TEST (RepairSamplingTest, SimilarityFunction) {
     ASSERT_EQ(t_max, min_max_s1.t_max);
     while(m_structure.exists()){
         t_s += window;
-        std::cout << "t_s: " << t_s << " a t_e: " << t_s+window-1 << std::endl;
         min_max_s1 = m_structure.next();
         min = INT32_MAX, max=-1;
-        for(uint64_t i = t_s; i < std::min(m_structure.last_t, t_s + window); ++i){
+        for(uint64_t i = t_s; i < std::min(m_structure.last_t+1, t_s + window); ++i){
             auto v = static_cast<int32_t >(orig[i]);
             if(min > v) {
                 min = v;

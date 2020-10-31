@@ -68,6 +68,12 @@ target_link_libraries(build libRepairGN sdsl divsufsort divsufsort64)
 add_executable(build_dac src/build_dac.cpp)
 target_link_libraries(build_dac libRepairGN sdsl divsufsort divsufsort64)
 
+add_executable(build_directory src/build_directory.cpp)
+target_link_libraries(build_directory libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(build_dac_directory src/build_dac_directory.cpp)
+target_link_libraries(build_dac_directory libRepairGN sdsl divsufsort divsufsort64)
+
 add_executable(access src/access.cpp)
 target_link_libraries(access libRepairGN sdsl divsufsort divsufsort64)
 
@@ -97,3 +103,6 @@ target_link_libraries(repair_sampling_offsets_test libRepairGN sdsl divsufsort d
 
 add_executable(vector_generator test/vector_generator.cpp)
 target_link_libraries(vector_generator libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(statitistics src/statistics.cpp)
+target_link_libraries(statitistics libRepairGN sdsl divsufsort divsufsort64)

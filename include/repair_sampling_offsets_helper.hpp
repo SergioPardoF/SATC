@@ -39,9 +39,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 namespace cds {
 
     inline double euclidean_distance(const std::pair<uint32_t , uint64_t > &p, const std::pair<uint32_t , uint64_t > &p1){
-        double x = 0, y = 0;
-        x = std::abs((int32_t) (p1.first - p.first));
-        y = std::abs((int64_t) (p1.second - p.second));
+        auto x = std::abs((int32_t) (p1.first - p.first));
+        auto y = std::abs((int64_t) (p1.second - p.second));
         return std::sqrt(x * x + y * y);
     }
 

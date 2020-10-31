@@ -11,12 +11,38 @@
 #include <cctype>
 #include <sys/stat.h>
 #include <config_util.hpp>
+#include <dirent.h>
+#include <stdint.h>
 
 
 namespace util {
 
 
     namespace file {
+
+        std::vector<std::string> read_directory(const std::string& name)
+        {
+            struct dirent **namelist;
+            int n;
+            std::vector<std::string> v;
+            n = scandir(name.c_str(), &namelist, 0, alphasort);
+            if (n > 0){
+                while (n--) {
+                    if(namelist[n]->d_type == DT_REG){
+                        v.push_back(namelist[n]->d_name);
+                    }
+                    free(namelist[n]);
+                }
+                free(namelist);
+            }
+            return v;
+        }
+
+        bool create_directory(const std::string& name){
+            int status;
+            status = mkdir(name.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+            return (status == 0);
+        }
 
         uint64_t file_size(const std::string& file){
             struct stat fs;
@@ -31,6 +57,8 @@ namespace util {
             return (stat(file.c_str(), &fs) == 0);
         }
 
+
+
         bool remove_file(const std::string &file){
             return (remove(file.c_str())==0);
         }
@@ -41,6 +69,11 @@ namespace util {
                 return file.substr(pos_last_slash+1);
             }
             return file;
+        }
+
+        bool end_slash(const std::string &file){
+            auto pos_last_slash = file.find_last_of("\\/");
+            return (pos_last_slash == file.length()-1);
         }
 
         std::string remove_extension(const std::string &file){

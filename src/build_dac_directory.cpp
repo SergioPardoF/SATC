@@ -28,44 +28,34 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 //
-// Created by Adrián on 29/10/2020.
+// Created by Adrián on 17/10/2020.
 //
-#include <string>
+
 #include <iostream>
 #include <repair_sampling_offsets.hpp>
-#include <repair_sampling_offsets_helper.hpp>
-#include <map>
 
 int main(int argc, char** argv) {
 
-    if(argc != 6){
-        std::cout << "Usage: " << argv[0] << " sequence directory i j window_size" << std::endl;
+    if(argc != 2){
+        std::cout << "Usage: " << argv[0] << " directory" << std::endl;
         return 1;
     }
-    std::string index_file1 = argv[1];
-    std::string directory = argv[2];
-    uint64_t i = std::atoll(argv[3]);
-    uint64_t j = std::atoll(argv[4]);
-    uint64_t window_size = std::atoll(argv[5]);
+    std::string directory = argv[1];
     if(!::util::file::end_slash(directory)){
         directory = directory + "/";
     }
-
-    cds::repair_sampling_offset<> m_s1, m_s2;
-    sdsl::load_from_file(m_s1, index_file1);
+    std::string repair_directory = directory + "dac/";
+    ::util::file::create_directory(repair_directory);
+    size_t min_length = INT64_MAX;
     auto files = ::util::file::read_directory(directory);
-    std::multimap<double, std::string> map;
     for(const auto &f : files){
-        std::cout << "File: " << f << std::endl;
         auto path_file = directory + f;
-        sdsl::load_from_file(m_s2, path_file);
-        auto similarity = cds::compute_similarity(m_s1, m_s2, window_size, i, j, cds::sum_similarity());
-        map.insert({similarity, f});
+        auto index_file = repair_directory + ::util::file::remove_extension(f)+".dac";
+        std::vector<int> input_vector;
+        ::util::file::read_from_file(path_file, input_vector);
+        if(input_vector.size() < min_length) min_length = input_vector.size();
+        cds::dac_vector_dp_v2<> m_dac(input_vector);
+        sdsl::store_to_file(m_dac, index_file);
     }
-    for(const auto &it : map) {
-        std::cout << it.second << std::endl;
-    }
-
+    std::cout << "Min length: " << min_length << std::endl;
 }
-
-

@@ -28,44 +28,39 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 //
-// Created by Adrián on 29/10/2020.
+// Created by Adrián on 30/10/2020.
 //
-#include <string>
 #include <iostream>
-#include <repair_sampling_offsets.hpp>
-#include <repair_sampling_offsets_helper.hpp>
-#include <map>
+#include <file_util.hpp>
 
 int main(int argc, char** argv) {
 
-    if(argc != 6){
-        std::cout << "Usage: " << argv[0] << " sequence directory i j window_size" << std::endl;
+    if(argc != 3){
+        std::cout << "Usage: " << argv[0] << " file1 file2" << std::endl;
         return 1;
     }
-    std::string index_file1 = argv[1];
-    std::string directory = argv[2];
-    uint64_t i = std::atoll(argv[3]);
-    uint64_t j = std::atoll(argv[4]);
-    uint64_t window_size = std::atoll(argv[5]);
-    if(!::util::file::end_slash(directory)){
-        directory = directory + "/";
-    }
+    std::string file1 = argv[1];
+    std::string file2 = argv[2];
 
-    cds::repair_sampling_offset<> m_s1, m_s2;
-    sdsl::load_from_file(m_s1, index_file1);
-    auto files = ::util::file::read_directory(directory);
-    std::multimap<double, std::string> map;
-    for(const auto &f : files){
-        std::cout << "File: " << f << std::endl;
-        auto path_file = directory + f;
-        sdsl::load_from_file(m_s2, path_file);
-        auto similarity = cds::compute_similarity(m_s1, m_s2, window_size, i, j, cds::sum_similarity());
-        map.insert({similarity, f});
+    std::ifstream input1(file1);
+    std::ifstream input2(file2);
+    std::string line;
+    std::vector<std::string> lines1, lines2;
+    while(input1 >> line){
+        lines1.push_back(::util::file::remove_extension(line));
     }
-    for(const auto &it : map) {
-        std::cout << it.second << std::endl;
+    input1.close();
+    while(input2 >> line){
+        lines2.push_back(::util::file::remove_extension(line));
     }
+    input2.close();
+    uint64_t oks = 0;
+    for(uint64_t i = 0; i < lines1.size(); ++i){
+        if(lines1[i].compare(lines2[i]) == 0){
+            ++oks;
+        }
+    }
+    std::cout << oks << " aciertos de " << lines1.size() << " elementos (" << (oks/ (double) lines1.size() * 100) <<"%)"<< std::endl;
+
 
 }
-
-

@@ -48,13 +48,13 @@ int main(int argc, char** argv) {
     cds::dac_vector_dp_v2<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
     auto sol = cds::dac_helper::access(m_structure, i, j);
-    std::cout << "Size: " << sol.size() << std::endl;
+    /*std::cout << "Size: " << sol.size() << std::endl;
     if(sol.size()){
         std::cout << "Elements: " << sol[0];
         for(uint64_t v = 1; v < sol.size(); ++v){
             std::cout << ", " << sol[v];
         }
         std::cout << std::endl;
-    }
+    }*/
 
 }

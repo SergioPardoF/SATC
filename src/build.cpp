@@ -46,8 +46,6 @@ int main(int argc, char** argv) {
 
     cds::repair_sampling_offset<> m_structure(input_file, period);
     sdsl::store_to_file(m_structure, index_file);
-    std::cout << "Last t: " << m_structure.last_t << std::endl;
-    std::cout << "Samples: " << m_structure.samples.size() << std::endl;
-    sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
+    //sdsl::write_structure<sdsl::format_type::HTML_FORMAT>(m_structure, ::util::file::remove_extension(index_file) + ".html");
 
 }

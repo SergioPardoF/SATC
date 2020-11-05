@@ -37,8 +37,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 
-std::string vector_int_file = "190209_190210_I_KNV_E9J2Q2_7ZE6BE.sal";
-std::string index_file = "repair/190209_190210_I_KNV_E9J2Q2_7ZE6BE.repair";
+std::string vector_int_file = "181201_181202_I_DXR_RSQESL_PS4EK1.sal";
+std::string index_file = "repair/181201_181202_I_DXR_RSQESL_PS4EK1.repair";
 uint64_t period = 7000;
 
 TEST (RepairSamplingTest, Construction) {
@@ -81,7 +81,7 @@ TEST (RepairSamplingTest, Access1) {
 }
 
 TEST (RepairSamplingTest, AccessOffset) {
-    uint64_t offset = 40;
+    uint64_t offset = 500;
     cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
 

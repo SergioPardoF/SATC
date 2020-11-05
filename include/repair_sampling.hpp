@@ -310,6 +310,12 @@ namespace cds {
 
         void decompress_entry(value_type val, std::vector<value_type> &result){
             while(val >= m_alpha ){
+                size_type cmin, cmax;
+                std::tie(cmin, cmax) = extremes(val);
+                if(cmin == cmax) {
+                    std::fill_n(std::back_inserter(result), length(val), cmin);
+                    return;
+                }
                 decompress_entry(left_rule(val), result);
                 val = right_rule(val);
             }
@@ -318,16 +324,23 @@ namespace cds {
 
         void decompress_beg(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, std::vector<value_type> &result){
             if(val >= m_alpha) {
-                auto l = left_rule(val);
-                auto len_l = length(l);
-                auto mid = t_b + len_l -1;
-                if (mid >= t_i) {
-                    decompress_beg(l, t_b, mid, t_i, t_j, result);
+                size_type cmin, cmax;
+                std::tie(cmin, cmax) = extremes(val);
+                if(cmin == cmax){
+                    auto b = std::max(t_b, t_i);
+                    auto e = std::min(t_e, t_j);
+                    std::fill_n(std::back_inserter(result), e-b+1, cmin);
+                }else{
+                    auto l = left_rule(val);
+                    auto len_l = length(l);
+                    auto mid = t_b + len_l -1;
+                    if (mid >= t_i) {
+                        decompress_beg(l, t_b, mid, t_i, t_j, result);
+                    }
+                    if(mid+1 <= t_j){
+                        decompress_beg(right_rule(val), mid+1, t_e, t_i, t_j, result);
+                    }
                 }
-                if(mid+1 <= t_j){
-                    decompress_beg(right_rule(val), mid+1, t_e, t_i, t_j, result);
-                }
-
             }else if( t_i <= t_b && t_b <= t_j){
                 result.push_back(val);
             }
@@ -335,15 +348,24 @@ namespace cds {
 
         void decompress_end(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, std::vector<value_type> &result){
             if(val >= m_alpha) {
-                auto l = left_rule(val);
-                auto len_l = length(l);
-                auto mid = t_b + len_l -1;
-                if(mid >= t_i){
-                    decompress_end(l, t_b, mid, t_i, t_j, result);
+                size_type cmin, cmax;
+                std::tie(cmin, cmax) = extremes(val);
+                if(cmin == cmax) {
+                    auto b = std::max(t_b, t_i);
+                    auto e = std::min(t_e, t_j);
+                    std::fill_n(std::back_inserter(result), e - b + 1, cmin);
+                }else{
+                    auto l = left_rule(val);
+                    auto len_l = length(l);
+                    auto mid = t_b + len_l -1;
+                    if(mid >= t_i){
+                        decompress_end(l, t_b, mid, t_i, t_j, result);
+                    }
+                    if(mid+1 <= t_j){
+                        decompress_end(right_rule(val), t_b+len_l, t_e, t_i, t_j, result);
+                    }
                 }
-                if(mid+1 <= t_j){
-                    decompress_end(right_rule(val), t_b+len_l, t_e, t_i, t_j, result);
-                }
+
             }else if(t_i <= t_b && t_b <= t_j){
                 result.push_back(val);
             }

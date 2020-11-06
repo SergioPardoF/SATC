@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     cds::dac_vector_dp_v2<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
     auto sol = cds::dac_helper::extremes(m_structure, i, j);
-    std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;
+    //std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;
 
 
 

@@ -46,7 +46,7 @@ int main(int argc, char** argv) {
     cds::repair_sampling_offset<> m_structure;
     sdsl::load_from_file(m_structure, index_file);
     auto sol = m_structure.extremes(i, j);
-    std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;
+   // std::cout << "Min: " << sol.first << " Max: " << sol.second << std::endl;
 
 
 

@@ -52,13 +52,15 @@ int main(int argc, char** argv) {
     cds::dac_vector_dp_v2<> m_s1, m_s2;
     sdsl::load_from_file(m_s1, index_file1);
     auto files = ::util::file::read_directory(directory);
-    std::multimap<double, std::string> map;
+    std::multimap<uint64_t , std::string> map;
     for(const auto &f : files){
         auto path_file = directory + f;
         sdsl::load_from_file(m_s2, path_file);
         auto similarity = cds::dac_helper::similarity(m_s1, m_s2, i, j);
+        std::cout << "File: " << f << " similarity: " << similarity << std::endl;
         map.insert({similarity, f});
     }
+
     for(const auto &it : map) {
         std::cout << it.second << std::endl;
     }

@@ -35,6 +35,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <repair_sampling_offsets.hpp>
 #include <repair_sampling_offsets_helper.hpp>
 #include <vector>
+#include <dac_helper.hpp>
 
 
 std::string vector_int_file = "181201_181202_I_DXR_RSQESL_PS4EK1.sal";
@@ -190,6 +191,49 @@ TEST (RepairSamplingTest, Similarity) {
 
     ASSERT_GT(v2, v1);
 
+
+}
+
+TEST (DACTest, Similarity) {
+    uint64_t window = 500;
+    std::vector<uint32_t > s1_values = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4};
+    std::vector<uint32_t > s2_values, s3_values;
+    s2_values.resize(s1_values.size());
+    s3_values.resize(s1_values.size());
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        s2_values[i] = s1_values[i]+2;
+        s3_values[i] = s1_values[i] + rand() % 10 + 2;
+    }
+    cds::dac_vector_dp_v2<> s1(s1_values);
+    cds::dac_vector_dp_v2<> s2(s2_values);
+    cds::dac_vector_dp_v2<> s3(s3_values);
+
+    auto v1 = cds::dac_helper::similarity(s1, s2, 0, s1.size()-1);
+    auto v2 = cds::dac_helper::similarity(s2, s1, 0, s1.size()-1);
+    int32_t r1 = 0;
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        r1 += std::abs(static_cast<int32_t>(s1_values[i]) - static_cast<int32_t>(s2_values[i]));
+    }
+    int32_t r2 = 0;
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        r2 += std::abs(static_cast<int32_t>(s2_values[i]) - static_cast<int32_t>(s1_values[i]));
+    }
+    ASSERT_EQ(r1, r2);
+    ASSERT_EQ(v2, v1);
+    ASSERT_EQ(v1, r1);
+
+    v1 = cds::dac_helper::similarity(s1, s3, 0, s1.size()-1);
+    v2 = cds::dac_helper::similarity(s3, s1, 0, s1.size()-1);
+    r1 = 0, r2 = 0;
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        r1 += std::abs(static_cast<int32_t>(s1_values[i]) - static_cast<int32_t>(s3_values[i]));
+    }
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        r2 += std::abs(static_cast<int32_t>(s3_values[i]) - static_cast<int32_t>(s1_values[i]));
+    }
+    ASSERT_EQ(r1, r2);
+    ASSERT_EQ(v2, v1);
+    ASSERT_EQ(v1, r1);
 
 }
 

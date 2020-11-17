@@ -64,14 +64,12 @@ namespace cds {
         }
 
         template<class Container>
-        double similarity(Container &c1, Container &c2, uint64_t i, uint64_t j){
-            double r = 0;
+        uint64_t similarity(Container &c1, Container &c2, uint64_t i, uint64_t j){
+            uint64_t r = 0;
             for(auto k = i ; k <= j; ++k){
-                if(c1[k]>c2[k]){
-                    r += c1[k] - c2[k];
-                }else{
-                    r += c2[k] - c1[k];
-                }
+                int64_t c1_k = c1[k];
+                int64_t c2_k = c2[k];
+                r = r + std::abs(c1_k - c2_k);
             }
             return r;
         }

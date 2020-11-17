@@ -57,7 +57,7 @@ int main(int argc, char** argv) {
         auto path_file = directory + f;
         sdsl::load_from_file(m_s2, path_file);
         auto similarity = cds::dac_helper::similarity(m_s1, m_s2, i, j);
-        std::cout << "File: " << f << " similarity: " << similarity << std::endl;
+        //std::cout << "File: " << f << " similarity: " << similarity << std::endl;
         map.insert({similarity, f});
     }
 

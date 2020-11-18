@@ -39,6 +39,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "repair.hpp"
 #include "split_repair_helper.hpp"
 #include <util_mem.hpp>
+#include <queue>
 
 namespace cds {
 
@@ -60,6 +61,11 @@ namespace cds {
             value_type min, max;
             size_type t_min, t_max;
         } result_type;
+
+        typedef struct {
+            value_type val;
+            slot_type slot;
+        } slot_value_type;
 
 
     private:
@@ -247,6 +253,7 @@ namespace cds {
                 result.push_back(val);
             }
         }*/
+
 
         void decompress_interval(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, std::vector<value_type> &result){
             if(val >= m_alpha) {
@@ -519,6 +526,50 @@ namespace cds {
             m_curr_te = m_curr_tb + m_window_size -1;
             return get_min_max_time();
         }
+
+        void init_runs(std::stack<slot_value_type> &stack, size_type t_b, size_type t_e){
+            auto slot = locate_slot(t_b);
+            stack.push({m_values[slot.entry], slot});
+        }
+
+        slot_value_type next_run(std::stack<slot_value_type> &stack, size_type t_b, size_type t_e){
+            value_type min, max;
+            slot_value_type element, sol;
+            do{
+                element = stack.top();
+                stack.pop();
+                std::tie(min, max) = extremes(element.val);
+                if(min == max) {
+                    sol = {min, element.slot.entry, element.slot.t_b, element.slot.t_e};
+                    break;
+                }
+                auto l = left_rule(element.val);
+                auto t_m = element.slot.t_b + length(l);
+                auto r = right_rule(element.val);
+                if(t_m <= t_e && element.slot.t_e >= t_b){
+                    slot_value_type r_sv{r, element.slot.entry, t_m, element.slot.t_e};
+                    stack.push(r_sv);
+                }
+                if(element.slot.t_b <= t_e && t_m-1 >= t_b){
+                    slot_value_type l_sv{l, element.slot.entry, element.slot.t_b, t_m-1};
+                    stack.push(l_sv);
+                }
+            }while(!stack.empty());
+
+            if(stack.empty() && element.slot.entry+1< m_values.size()){
+                auto next_entry = element.slot.entry+1;
+                auto next_value = m_values[next_entry];
+                auto next_ts = element.slot.t_e+1;
+                auto next_te = next_ts + length(next_value)-1;
+                if(next_ts <= t_e && next_te >= t_b){
+                    slot_value_type next_sv{next_value, next_entry, next_ts, next_te};
+                    stack.push(next_sv);
+                }
+            }
+            return sol;
+
+        }
+
 
         //! Assignment move operation
         repair_sampling_offset& operator=(repair_sampling_offset&& p) {

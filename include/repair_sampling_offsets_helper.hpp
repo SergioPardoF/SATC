@@ -79,5 +79,55 @@ namespace cds {
         return result / (double) blocks;
     }
 
+    template <class t_value>
+    uint64_t compute_similarity_extract( repair_sampling_offset<t_value> &s1,  repair_sampling_offset<t_value> &s2,
+                               const typename repair_sampling_offset<t_value>::size_type i,
+                               const typename repair_sampling_offset<t_value>::size_type j){
+
+        auto v1 = s1.access(i, j);
+        auto v2 = s2.access(i, j);
+        uint64_t r = 0;
+        for(uint64_t k = 0; k <= j-i; ++k){
+            r += std::abs(static_cast<int64_t>(v1[k])-static_cast<int64_t>(v2[k]));
+        }
+        return r;
+
+    }
+
+    template <class t_value>
+    uint64_t compute_similarity_opt( repair_sampling_offset<t_value> &s1,  repair_sampling_offset<t_value> &s2,
+                                         const typename repair_sampling_offset<t_value>::size_type i,
+                                         const typename repair_sampling_offset<t_value>::size_type j){
+
+        //TODO: Precondition i and j between 0 and last_t
+        std::stack<typename repair_sampling_offset<t_value>::slot_value_type > stack1, stack2;
+        typename repair_sampling_offset<t_value>::slot_value_type sv1, sv2;
+        sv1.slot.t_e = 0;
+        sv2.slot.t_e = 0;
+
+        uint64_t r = 0;
+        s1.init_runs(stack1, i, j);
+        s2.init_runs(stack2, i, j);
+        do{
+            auto t1 = sv1.slot.t_e;
+            auto t2 = sv2.slot.t_e;
+            if(t1 <= t2){
+                sv1 = s1.next_run(stack1, i, j);
+            }
+            if(t2 <= t1){
+                sv2 = s2.next_run(stack2, i, j);
+            }
+
+            uint64_t diff = std::abs(static_cast<int64_t>(sv1.val) - static_cast<int64_t>(sv2.val));
+            auto t_i = std::max(i, std::max(sv1.slot.t_b, sv2.slot.t_b));
+            auto t_j = std::min(j, std::min(sv1.slot.t_e, sv2.slot.t_e));
+            r += diff * (t_j - t_i +1);
+
+        }while(!(stack1.empty() && stack2.empty()));
+        return r;
+
+    }
+
+
 }
 #endif //REPAIR_SAMPLING_REPAIR_SAMPLING_OFFSETS_HELPER_HPP

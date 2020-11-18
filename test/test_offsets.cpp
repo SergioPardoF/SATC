@@ -194,6 +194,61 @@ TEST (RepairSamplingTest, Similarity) {
 
 }
 
+TEST (RepairSamplingTest, SimilarityValues) {
+    uint64_t window = 500;
+    std::vector<uint32_t > s1_values = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4};
+    std::vector<uint32_t > s4_values = {5,5,1,1,1,6,6,1,1,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,2,2,2,2,4,4,4,4};
+    std::vector<uint32_t > s2_values, s3_values;
+    s2_values.resize(s1_values.size());
+    s3_values.resize(s1_values.size());
+    for(uint64_t i = 0; i < s1_values.size(); ++i){
+        s2_values[i] = s1_values[i]+2;
+        s3_values[i] = s1_values[i] + rand() % 10 + 2;
+    }
+    cds::repair_sampling_offset<> s1(s1_values, period);
+    cds::repair_sampling_offset<> s2(s2_values, period);
+    cds::repair_sampling_offset<> s3(s3_values, period);
+    cds::repair_sampling_offset<> s4(s4_values, period);
+
+    auto v1e = cds::compute_similarity_extract(s1, s2, 3, s1_values.size()-4 );
+    auto v1o = cds::compute_similarity_opt(s1, s2, 3, s1_values.size()-4 );
+    auto v2e = cds::compute_similarity_extract(s1, s3, 3, s1_values.size()-4 );
+    auto v2o = cds::compute_similarity_opt(s1, s3, 3, s1_values.size()-4 );
+    auto v3e = cds::compute_similarity_extract(s3, s1, 3, s1_values.size()-4 );
+    auto v3o = cds::compute_similarity_opt(s3, s1, 3, s1_values.size()-4 );
+    auto v4e = cds::compute_similarity_extract(s1, s4, 3, s1_values.size()-4 );
+    auto v4o = cds::compute_similarity_opt(s1, s4, 3, s1_values.size()-4 );
+
+    ASSERT_EQ(v1e, v1o);
+    ASSERT_EQ(v2e, v2o);
+    ASSERT_EQ(v3e, v3o);
+    ASSERT_EQ(v4e, v4o);
+
+
+}
+
+
+TEST (RepairSamplingTest, SimilarityRuns) {
+    uint64_t window = 500;
+    std::vector<uint32_t > s1_values = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4};
+    std::stack<cds::repair_sampling_offset<>::slot_value_type> stack;
+    cds::repair_sampling_offset<> s1(s1_values, 10);
+    s1.init_runs(stack, 0, s1_values.size()-1);
+    std::vector<uint32_t> sol;
+    while(!stack.empty()){
+        auto slot_value = s1.next_run(stack, 0, s1_values.size()-1);
+        for(uint64_t i = slot_value.slot.t_b; i <= slot_value.slot.t_e; ++i){
+            sol.push_back(slot_value.val);
+        }
+    }
+    ASSERT_EQ(sol.size(), s1_values.size());
+    for(uint64_t i = 0; i< sol.size(); ++i){
+        ASSERT_EQ(sol[i], s1_values[i]);
+    }
+
+
+}
+
 TEST (DACTest, Similarity) {
     uint64_t window = 500;
     std::vector<uint32_t > s1_values = {1,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4};

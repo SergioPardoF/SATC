@@ -92,6 +92,12 @@ target_link_libraries(times libRepairGN sdsl divsufsort divsufsort64)
 add_executable(similarity src/similarity.cpp)
 target_link_libraries(similarity libRepairGN sdsl divsufsort divsufsort64)
 
+add_executable(similarity_extract src/similarity_extract.cpp)
+target_link_libraries(similarity_extract libRepairGN sdsl divsufsort divsufsort64)
+
+add_executable(similarity_opt src/similarity_opt.cpp)
+target_link_libraries(similarity_opt libRepairGN sdsl divsufsort divsufsort64)
+
 add_executable(similarity_dac src/similarity_dac.cpp)
 target_link_libraries(similarity_dac libRepairGN sdsl divsufsort divsufsort64)
 

@@ -56,9 +56,12 @@ namespace cds {
             size_type t_e;
         } slot_type;
 
-    private:
-        size_type m_period;
+        std::vector<value_type> compressed() {
+            return m_values;
+        }
         size_type m_alpha;
+
+    private:
         size_type m_last_t;
         std::vector<value_type> m_values;
         std::vector<value_type> m_rules;
@@ -67,13 +70,11 @@ namespace cds {
         dac_vector_dp_v2<> m_extra_info_values;
 
     public:
-        const size_type &period = m_period;
         const size_type &last_t = m_last_t;
 
     private:
 
         void copy(const repair_sampling& p){
-            m_period = p.m_period;
             m_values = p.m_values;
             m_rules = p.m_rules;
             m_alpha = p.m_alpha;
@@ -195,58 +196,38 @@ namespace cds {
             m_extra_info_values = dac_vector_dp_v2<>(extra_info_pos);
         }
 
-        void samples(const repair &m_repair_algo){
-            size_type real_position = 0;
-            for(int i = 0; i < m_repair_algo.lenC; ++i){
-                value_type c_val = m_repair_algo.c[i];
-                if(real_position % m_period == 0) {
-                    m_samples.push_back(i);
-                }
-                if(c_val >= m_alpha){
-                   real_position += m_extra_info_length[c_val - m_alpha];
-                }else{
-                   ++real_position;
-                }
-            }
-        }
-
-        void construction(const std::vector<value_type> &log, const size_type period){
-            m_period = period;
+        void construction(const std::vector<value_type> &log){
             m_last_t = log.size()-1;
             int32_t max_value = 0;
             std::vector<int32_t> aux_log, terminals;
             std::map<int32_t, char> map_terminals;
             for(size_type i = 0; i < log.size(); ++i){
-                if(i % m_period == 0){
-                    aux_log.push_back(-1);
-                }
                 aux_log.push_back(log[i]);
                 if(log[i] > max_value) max_value = log[i];
             }
             add_splits(aux_log, terminals, map_terminals);
             size_type length_log = aux_log.size();
             int* log_repair = new int[length_log];
-            std::cout << length_log << std::endl;
+            std::cout << "Numbers before compression: " << length_log << " numbers" << std::endl;
             sort(terminals.begin(), terminals.end());
             auto m_zero_value = translate_log(aux_log, terminals, log_repair);
             aux_log.clear();
             //3. We apply repair over the log
             repair m_repair_algo;
             int total_MB = ::util::memory::total_memory_megabytes() * 0.8;
-            std::cout << total_MB << std::endl;
+            std::cout << "Memory to use: " << total_MB << "MB" << std::endl;
             m_repair_algo.run(log_repair, length_log, total_MB);
             reverse_translation(m_repair_algo, m_zero_value, terminals);
             std::cout << "Last in c: " << m_repair_algo.c[m_repair_algo.lenC-1] << std::endl;
             m_alpha = m_repair_algo.alpha;
             //6. We add extra information to the rules
             add_extra_info_rules(m_repair_algo);
-            samples(m_repair_algo);
             m_values = std::vector<value_type>(m_repair_algo.lenC);
             for(auto i = 0; i < m_values.size(); ++i){
                 m_values[i] = m_repair_algo.c[i];
             }
 
-            std::cout << m_alpha << std::endl;
+            std::cout << "M_alpha: " << m_alpha << std::endl;
         }
 
         inline value_type left_rule(const value_type val){
@@ -276,37 +257,7 @@ namespace cds {
             }
         }
 
-        slot_type locate_slot(size_type tq){
-            auto sample = tq / m_period;
-            auto diff = tq - sample * m_period;
-            if(diff < m_period/2){
-                //left
-                size_type entry = m_samples[sample];
-                size_type t_e = (sample)*m_period + length(m_values[entry])-1;
-                while(t_e < tq ){
-                    ++entry;
-                    t_e = t_e + length(m_values[entry]);
-                }
-                return slot_type{entry, t_e - length(m_values[entry])+1, t_e};
-            }else{
-                //right
-                size_type entry, t_b;
-                if(sample < m_samples.size()-1){
-                    entry = m_samples[sample+1]-1;
-                    t_b = (sample+1)*m_period - length(m_values[entry]);
-                }else{
-                    entry = m_values.size()-1;
-                    t_b = m_last_t+1 - length(m_values[entry]);
-                }
-
-                while(t_b > tq){
-                    --entry;
-                    t_b = t_b - length(m_values[entry]);
-                }
-                return slot_type{entry, t_b, t_b + length(m_values[entry])-1};
-
-            }
-        }
+    public:
 
         void decompress_entry(value_type val, std::vector<value_type> &result){
             while(val >= m_alpha ){
@@ -321,7 +272,7 @@ namespace cds {
             }
             result.push_back(val);
         }
-
+    private:
         void decompress_beg(value_type val, size_type t_b, size_type t_e, size_type t_i, size_type t_j, std::vector<value_type> &result){
             if(val >= m_alpha) {
                 size_type cmin, cmax;
@@ -417,14 +368,14 @@ namespace cds {
 
         repair_sampling(){};
 
-        repair_sampling(const std::string &file, const size_type period){
+        repair_sampling(const std::string &file){
             std::vector<value_type> log;
             ::util::file::read_from_file(file, log);
-            construction(log, period);
+            construction(log);
         }
 
-        repair_sampling(const std::vector<value_type> &log, const size_type period){
-           construction(log, period);
+        repair_sampling(const std::vector<value_type> &log){
+           construction(log);
         }
 
 
@@ -441,48 +392,9 @@ namespace cds {
             return result;
         }
 
-        std::vector<value_type> access(size_type i, size_type j){
-            std::vector<value_type> result;
-            auto slot = locate_slot(i);
-            value_type val = m_values[slot.entry];
-            decompress_beg(val, slot.t_b, slot.t_e, i, j, result);
-            auto c_entry = slot.entry+1;
-            auto t_b = slot.t_e + 1;
-            auto t_e = slot.t_e+length(m_values[c_entry]);
-            while(t_e < j){
-                decompress_entry(m_values[c_entry], result);
-                ++c_entry;
-                t_b = t_e + 1;
-                t_e = t_e + length(m_values[c_entry]);
-            }
-            decompress_end(m_values[c_entry], t_b, t_e, i, j, result);
-            return result;
-        }
-
-        std::pair<value_type, value_type> extremes(size_type i, size_type j){
-            auto slot = locate_slot(i);
-            auto c_entry = slot.entry+1;
-            auto t_b = slot.t_e + 1;
-            auto t_e = slot.t_e+length(m_values[c_entry]);
-            value_type min = INT32_MAX, max = 0;
-            value_type c_min, c_max;
-            while(t_e < j){
-                std::tie(c_min, c_max) = extremes(m_values[c_entry]);
-                if(min > c_min) min = c_min;
-                if(max < c_max) max = c_max;
-                ++c_entry;
-                t_b = t_e + 1;
-                t_e = t_e + length(m_values[c_entry]);
-            }
-            update_extremes_beg(m_values[slot.entry], slot.t_b, slot.t_e, i, j, min, max);
-            update_extremes_end(m_values[c_entry], t_b, t_e, i, j, min, max);
-            return {min, max};
-        }
-
         //! Assignment move operation
         repair_sampling& operator=(repair_sampling&& p) {
             if (this != &p) {
-                m_period = std::move(p.m_period);
                 m_values = std::move(p.m_values);
                 m_rules = std::move(p.m_rules);
                 m_samples = std::move(p.m_samples);
@@ -523,7 +435,6 @@ namespace cds {
         void swap(repair_sampling& p)
         {
             // m_bp.swap(bp_support.m_bp); use set_vector to set the supported bit_vector
-            std::swap(m_period, p.m_period);
             std::swap(m_values, p.m_values);
             std::swap(m_rules, p.m_rules);
             std::swap(m_samples, p.m_samples);
@@ -543,7 +454,6 @@ namespace cds {
         {
             sdsl::structure_tree_node* child = sdsl::structure_tree::add_child(v, name, sdsl::util::class_name(*this));
             uint64_t written_bytes = 0;
-            written_bytes += sdsl::write_member(m_period, out, child, "period");
             written_bytes += sdsl::write_member(m_alpha, out, child, "alpha");
             written_bytes += sdsl::write_member(m_last_t, out, child, "last_t");
             written_bytes += sdsl::write_member(m_values.size(), out, child, "values_size");
@@ -561,7 +471,6 @@ namespace cds {
 
         void load(std::istream &in){
             uint64_t m_rules_size = 0, m_values_size=0, m_samples_size = 0;
-            sdsl::read_member(m_period, in);
             sdsl::read_member(m_alpha, in);
             sdsl::read_member(m_last_t, in);
             sdsl::read_member(m_values_size, in);

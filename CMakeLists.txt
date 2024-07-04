@@ -58,9 +58,11 @@ include_directories("${PROJECT_SOURCE_DIR}/external/googletest/include"
         ${STXXL_INCLUDE_DIRS}
         )
 
+add_executable(decompress src/decompress.cpp)
+target_link_libraries(decompress libRepairGN sdsl divsufsort divsufsort64)
 
-add_executable(main src/main.cpp)
-target_link_libraries(main libRepairGN sdsl divsufsort divsufsort64)
+add_executable(compress src/compress.cpp)
+target_link_libraries(compress libRepairGN sdsl divsufsort divsufsort64)
 
 add_executable(build src/build.cpp)
 target_link_libraries(build libRepairGN sdsl divsufsort divsufsort64)
